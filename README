@@ -1,0 +1,232 @@
+README - Sistema de Gestão PDV
+📋 Descrição do Projeto
+Sistema web para Gestão de Ponto de Venda (PDV) que realiza abertura e fechamento de caixa, integrado com o sistema de cardápio online cardapio.ai via webhooks para recebimento automático de vendas.
+
+🚀 Funcionalidades
+Principais
+Abertura de Caixa: Registro inicial do caixa com valor de fundo
+
+Fechamento de Caixa: Encerramento com relatório consolidado
+
+Dashboard: Visualização em tempo real do status do caixa
+
+Recebimento de Vendas: Integração automática via webhook do cardapio.ai
+
+Histórico de Vendas: Consulta de todas as transações processadas
+
+Técnicas
+Interface responsiva e intuitiva
+
+Armazenamento seguro no Supabase
+
+Processamento assíncrono de webhooks
+
+Validação de dados em tempo real
+
+🛠 Tecnologias Utilizadas
+Frontend: HTML5, CSS3, JavaScript (ES6+)
+
+Backend: JavaScript (Node.js environment)
+
+Banco de Dados: Supabase (PostgreSQL)
+
+Autenticação: Supabase Auth
+
+API: RESTful com Supabase Client
+
+Deploy: Hospedagem compatível com serviços serverless
+
+📦 Estrutura do Projeto
+text
+gestao-pdv/
+├── index.html              # Página principal/dashboard
+├── abertura-caixa.html     # Tela de abertura de caixa
+├── fechamento-caixa.html   # Tela de fechamento de caixa
+├── historico-vendas.html   # Histórico de vendas
+├── configuracao.html       # Configurações do sistema
+├── css/
+│   ├── style.css           # Estilos principais
+│   └── responsive.css      # Estilos responsivos
+├── js/
+│   ├── supabase-client.js  # Configuração do Supabase
+│   ├── auth.js             # Gerenciamento de autenticação
+│   ├── caixa.js            # Lógica de abertura/fechamento
+│   ├── vendas.js           # Gerenciamento de vendas
+│   ├── webhook.js          # Processamento de webhooks
+│   └── utils.js            # Funções utilitárias
+└── webhook/
+    └── index.js            # Endpoint para receber webhooks
+⚙️ Configuração e Instalação
+Pré-requisitos
+Conta no Supabase
+
+Conta no cardapio.ai
+
+Servidor de hospedagem com suporte a JavaScript
+
+1. Configuração do Supabase
+Crie um novo projeto no Supabase
+
+Execute o seguinte script SQL para criar as tabelas:
+
+sql
+-- Tabela de caixas
+CREATE TABLE caixas (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  data_abertura TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  data_fechamento TIMESTAMP WITH TIME ZONE,
+  valor_abertura DECIMAL(10,2) NOT NULL,
+  valor_fechamento DECIMAL(10,2),
+  status VARCHAR(20) DEFAULT 'aberto',
+  usuario_id UUID REFERENCES auth.users(id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Tabela de vendas
+CREATE TABLE vendas (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  caixa_id UUID REFERENCES caixas(id),
+  pedido_id VARCHAR(100) NOT NULL,
+  valor_total DECIMAL(10,2) NOT NULL,
+  forma_pagamento VARCHAR(50),
+  status VARCHAR(50) DEFAULT 'confirmada',
+  dados_pedido JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Habilitar RLS (Row Level Security)
+ALTER TABLE caixas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE vendas ENABLE ROW LEVEL SECURITY;
+
+-- Políticas de segurança
+CREATE POLICY "Usuários podem gerenciar seus caixas" ON caixas
+  FOR ALL USING (auth.uid() = usuario_id);
+
+CREATE POLICY "Usuários podem ver suas vendas" ON vendas
+  FOR ALL USING (EXISTS (
+    SELECT 1 FROM caixas 
+    WHERE caixas.id = vendas.caixa_id 
+    AND caixas.usuario_id = auth.uid()
+  ));
+2. Configuração da Aplicação
+Clone o repositório:
+
+bash
+git clone [url-do-repositorio]
+cd gestao-pdv
+Configure as variáveis de ambiente no arquivo js/supabase-client.js:
+
+
+Configure o webhook no cardapio.ai:
+
+URL do webhook: https://seudominio.com/webhook
+
+Eventos: pedido.confirmado, pedido.cancelado
+
+🔧 Uso do Sistema
+Abertura de Caixa
+Acesse a tela "Abrir Caixa"
+
+Informe o valor inicial do fundo de caixa
+
+Confirme a abertura
+
+Recebimento de Vendas
+As vendas são recebidas automaticamente via webhook
+
+Cada venda é vinculada ao caixa aberto atual
+
+Status atualizado em tempo real no dashboard
+
+Fechamento de Caixa
+Acesse a tela "Fechar Caixa"
+
+Sistema calcula automaticamente:
+
+Total de vendas
+
+Valor esperado em caixa
+
+Diferença (se houver)
+
+Confirme o fechamento
+
+🔒 Segurança
+Autenticação via Supabase Auth
+
+Row Level Security no banco de dados
+
+Validação de payloads de webhook
+
+CORS configurado adequadamente
+
+Dados sensíveis armazenados de forma segura
+
+📱 Responsividade
+O sistema é totalmente responsivo e funciona em:
+
+💻 Desktop
+
+📱 Smartphones
+
+🖥️ Tablets
+
+🚀 Deploy
+Opção 1: Netlify/Vercel
+Conecte seu repositório Git
+
+Configure as variáveis de ambiente
+
+Deploy automático
+
+Opção 2: Hospedagem Tradicional
+Faça upload dos arquivos para seu servidor
+
+Configure o Supabase
+
+Configure o endpoint de webhook
+
+🐛 Solução de Problemas
+Webhook não recebe vendas
+Verifique a URL configurada no cardapio.ai
+
+Confirme se o endpoint está acessível
+
+Verifique os logs do servidor
+
+Caixa não abre/fecha
+Confirme a conexão com o Supabase
+
+Verifique as permissões RLS
+
+Confirme se o usuário está autenticado
+
+Erros de autenticação
+Verifique as chaves do Supabase
+
+Confirme se o usuário está logado
+
+Limpe cache e cookies do navegador
+
+🤝 Contribuição
+Fork o projeto
+
+Crie uma branch para sua feature (git checkout -b feature/AmazingFeature)
+
+Commit suas mudanças (git commit -m 'Add some AmazingFeature')
+
+Push para a branch (git push origin feature/AmazingFeature)
+
+Abra um Pull Request
+
+📄 Licença
+Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
+
+📞 Suporte
+Em caso de dúvidas ou problemas:
+
+Consulte a documentação do Supabase
+
+Verifique a documentação do cardapio.ai
+
+Abra uma issue no repositório do projeto
