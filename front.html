@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema PDV - Backend Proxy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .navbar {
+            background-color: var(--primary-color);
+        }
+        
+        .card {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: none;
+            margin-bottom: 20px;
+        }
+        
+        .btn-primary {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+        
+        .status-caixa {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .caixa-aberto {
+            background-color: rgba(39, 174, 96, 0.2);
+            color: var(--success-color);
+        }
+        
+        .caixa-fechado {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: var(--danger-color);
+        }
+        
+        .payment-column {
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .payment-total {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .sale-item {
+            cursor: pointer;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .sale-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .modal-lg {
+            max-width: 800px;
+        }
+        
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+        }
+        
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            
+            .print-section {
+                display: block !important;
+            }
+        }
+        
+        .print-section {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-cash-coin"></i> Sistema PDV - Backend Proxy
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text" id="statusCaixa">
+                    <i class="bi bi-circle-fill"></i> Caixa Fechado
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Tela Inicial -->
+        <div id="telaInicial" class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <h1 class="card-title">Sistema de Gestão PDV</h1>
+                        <p class="card-text">Conectado via Backend Seguro</p>
+                        <button id="btnAbrirCaixa" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#modalAbrirCaixa">
+                            <i class="bi bi-cash-stack"></i> Abrir Caixa
+                        </button>
+                        
+                        <!-- Status da Conexão -->
+                        <div class="mt-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">Status do Sistema</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <strong>Backend:</strong> 
+                                        <span id="statusBackend" class="badge bg-secondary">Verificando...</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Banco de Dados:</strong> 
+                                        <span id="statusDatabase" class="badge bg-secondary">Verificando...</span>
+                                    </div>
+                                    <button id="btnVerificarStatus" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-arrow-clockwise"></i> Verificar Status
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard do Caixa -->
+        <div id="dashboardCaixa" class="row" style="display: none;">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">Resumo do Caixa</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <strong>Valor Inicial:</strong> <span id="valorInicial">R$ 0,00</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Total em Vendas:</strong> <span id="totalVendas">R$ 0,00</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Total de Retiradas:</strong> <span id="totalRetiradas">R$ 0,00</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Saldo Atual:</strong> <span id="saldoAtual">R$ 0,00</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">Nova Retirada</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="valorRetirada" class="form-label">Valor</label>
+                            <input type="number" class="form-control" id="valorRetirada" step="0.01" min="0.01">
+                        </div>
+                        <div class="mb-3">
+                            <label for="obsRetirada" class="form-label">Observação</label>
+                            <textarea class="form-control" id="obsRetirada" rows="2"></textarea>
+                        </div>
+                        <button id="btnRegistrarRetirada" class="btn btn-success w-100">
+                            <i class="bi bi-cash"></i> Registrar Retirada
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Relatório de Vendas</h5>
+                        <div>
+                            <button id="btnAtualizarVendas" class="btn btn-outline-secondary btn-sm me-2">
+                                <i class="bi bi-arrow-clockwise"></i> Atualizar
+                            </button>
+                            <button id="btnFecharCaixa" class="btn btn-danger">
+                                <i class="bi bi-lock-fill"></i> Fechar Caixa
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="paymentColumns">
+                            <!-- Colunas de tipos de pagamento serão geradas dinamicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Abrir Caixa -->
+    <div class="modal fade" id="modalAbrirCaixa" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Abrir Caixa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="valorInicialInput" class="form-label">Valor Inicial em Caixa</label>
+                        <input type="number" class="form-control" id="valorInicialInput" step="0.01" min="0" value="0.00">
+                    </div>
+                    <div class="mb-3">
+                        <label for="observacaoAbertura" class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacaoAbertura" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btnSalvarAbertura">
+                        <i class="bi bi-check-lg"></i> Abrir Caixa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detalhes da Venda -->
+    <div class="modal fade" id="modalDetalhesVenda" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalhes da Venda</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="detalhesVendaConteudo">
+                        <!-- Conteúdo será preenchido dinamicamente -->
+                    </div>
+                    <div class="mt-3">
+                        <label for="tipoPagamentoSelect" class="form-label">Tipo de Pagamento</label>
+                        <select class="form-select" id="tipoPagamentoSelect">
+                            <option value="DINHEIRO">Dinheiro</option>
+                            <option value="CARTAO_CREDITO">Cartão de Crédito</option>
+                            <option value="CARTAO_DEBITO">Cartão de Débito</option>
+                            <option value="PIX">PIX</option>
+                            <option value="OUTRO">Outro</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-primary" id="btnSalvarAlteracoesVenda">
+                        <i class="bi bi-check-lg"></i> Salvar Alterações
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Fechar Caixa -->
+    <div class="modal fade" id="modalFecharCaixa" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Fechar Caixa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="valorRetiradaFechamento" class="form-label">Valor de Retirada Final</label>
+                                <input type="number" class="form-control" id="valorRetiradaFechamento" step="0.01" min="0">
+                            </div>
+                            <div class="mb-3">
+                                <label for="obsRetiradaFechamento" class="form-label">Observação da Retirada</label>
+                                <textarea class="form-control" id="obsRetiradaFechamento" rows="3"></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">Resumo do Fechamento</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <strong>Valor de Abertura:</strong> <span id="resumoValorAbertura">R$ 0,00</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Total em Vendas:</strong> <span id="resumoTotalVendas">R$ 0,00</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Total de Retiradas:</strong> <span id="resumoTotalRetiradas">R$ 0,00</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Saldo Final:</strong> <span id="resumoSaldoFinal">R$ 0,00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6>Vendas por Tipo de Pagamento</h6>
+                        <div id="resumoVendasPagamento">
+                            <!-- Resumo será preenchido dinamicamente -->
+                        </div>
+                    </div>
+                    
+                    <!-- Área de impressão -->
+                    <div id="areaImpressao" class="print-section mt-4">
+                        <div class="text-center">
+                            <h4>COMPROVANTE DE FECHAMENTO DE CAIXA</h4>
+                            <p>Data: <span id="impressaoData"></span></p>
+                        </div>
+                        <hr>
+                        <div>
+                            <p><strong>Valor de Abertura:</strong> <span id="impressaoValorAbertura"></span></p>
+                            <p><strong>Total em Vendas:</strong> <span id="impressaoTotalVendas"></span></p>
+                            <div id="impressaoVendasPagamento">
+                                <!-- Detalhes das vendas por tipo de pagamento -->
+                            </div>
+                            <p><strong>Total de Retiradas:</strong> <span id="impressaoTotalRetiradas"></span></p>
+                            <hr>
+                            <p><strong>Saldo Final:</strong> <span id="impressaoSaldoFinal"></span></p>
+                        </div>
+                        <hr>
+                        <div class="text-center">
+                            <p>--- FIM DO COMPROVANTE ---</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-warning" id="btnImprimirComprovante">
+                        <i class="bi bi-printer"></i> Imprimir Comprovante
+                    </button>
+                    <button type="button" class="btn btn-danger" id="btnConfirmarFechamento">
+                        <i class="bi bi-lock-fill"></i> Fechar Caixa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Configuração da API
+        const API_URL = 'http://localhost:3000'; // Altere para sua URL de produção
+        
+        // Estado da aplicação
+        let estadoApp = {
+            caixaAberto: false,
+            aberturaAtual: null,
+            vendas: [],
+            retiradas: [],
+            tiposPagamento: ['DINHEIRO', 'CARTAO_CREDITO', 'CARTAO_DEBITO', 'PIX', 'OUTRO']
+        };
+        
+        // Elementos DOM
+        let elementos = {};
+        
+        // Inicialização da aplicação
+        document.addEventListener('DOMContentLoaded', function() {
+            inicializarElementos();
+            configurarEventListeners();
+            verificarStatusSistema();
+        });
+        
+        function inicializarElementos() {
+            elementos = {
+                telaInicial: document.getElementById('telaInicial'),
+                dashboardCaixa: document.getElementById('dashboardCaixa'),
+                statusCaixa: document.getElementById('statusCaixa'),
+                statusBackend: document.getElementById('statusBackend'),
+                statusDatabase: document.getElementById('statusDatabase'),
+                btnAbrirCaixa: document.getElementById('btnAbrirCaixa'),
+                btnVerificarStatus: document.getElementById('btnVerificarStatus'),
+                btnFecharCaixa: document.getElementById('btnFecharCaixa'),
+                btnAtualizarVendas: document.getElementById('btnAtualizarVendas'),
+                paymentColumns: document.getElementById('paymentColumns'),
+                valorInicial: document.getElementById('valorInicial'),
+                totalVendas: document.getElementById('totalVendas'),
+                totalRetiradas: document.getElementById('totalRetiradas'),
+                saldoAtual: document.getElementById('saldoAtual'),
+                btnSalvarAbertura: document.getElementById('btnSalvarAbertura'),
+                btnRegistrarRetirada: document.getElementById('btnRegistrarRetirada'),
+                btnSalvarAlteracoesVenda: document.getElementById('btnSalvarAlteracoesVenda'),
+                btnImprimirComprovante: document.getElementById('btnImprimirComprovante'),
+                btnConfirmarFechamento: document.getElementById('btnConfirmarFechamento')
+            };
+        }
+        
+        function configurarEventListeners() {
+            elementos.btnVerificarStatus.addEventListener('click', verificarStatusSistema);
+            elementos.btnSalvarAbertura.addEventListener('click', salvarAberturaCaixa);
+            elementos.btnFecharCaixa.addEventListener('click', prepararFechamentoCaixa);
+            elementos.btnAtualizarVendas.addEventListener('click', carregarVendas);
+            elementos.btnRegistrarRetirada.addEventListener('click', registrarRetirada);
+            elementos.btnSalvarAlteracoesVenda.addEventListener('click', salvarAlteracoesVenda);
+            elementos.btnImprimirComprovante.addEventListener('click', imprimirComprovante);
+            elementos.btnConfirmarFechamento.addEventListener('click', fecharCaixa);
+        }
+        
+        // Função para fazer requisições à API
+        async function apiRequest(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_URL}${endpoint}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Erro ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error(`Erro na requisição ${endpoint}:`, error);
+                throw error;
+            }
+        }
+        
+        // Verificar status do sistema
+        async function verificarStatusSistema() {
+            try {
+                elementos.btnVerificarStatus.classList.add('loading');
+                
+                const health = await apiRequest('/health');
+                
+                // Atualizar status do backend
+                elementos.statusBackend.textContent = 'Online';
+                elementos.statusBackend.className = 'badge bg-success';
+                
+                // Atualizar status do banco de dados
+                elementos.statusDatabase.textContent = health.database === 'connected' ? 'Conectado' : 'Desconectado';
+                elementos.statusDatabase.className = health.database === 'connected' ? 'badge bg-success' : 'badge bg-warning';
+                
+                // Se o sistema está online, verificar estado do caixa
+                if (health.status === 'online') {
+                    await verificarEstadoCaixa();
+                }
+                
+            } catch (error) {
+                elementos.statusBackend.textContent = 'Offline';
+                elementos.statusBackend.className = 'badge bg-danger';
+                elementos.statusDatabase.textContent = 'Desconectado';
+                elementos.statusDatabase.className = 'badge bg-danger';
+                
+                console.error('Erro ao verificar status do sistema:', error);
+            } finally {
+                elementos.btnVerificarStatus.classList.remove('loading');
+            }
+        }
+        
+        // Verificar estado do caixa
+        async function verificarEstadoCaixa() {
+            try {
+                const data = await apiRequest('/caixa/status');
+                estadoApp.caixaAberto = data.caixaAberto;
+                estadoApp.aberturaAtual = data.caixaAtual;
+                
+                if (estadoApp.caixaAberto) {
+                    atualizarInterfaceCaixaAberto();
+                    await carregarVendas();
+                    await carregarRetiradas();
+                } else {
+                    atualizarInterfaceCaixaFechado();
+                }
+            } catch (error) {
+                console.error('Erro ao verificar estado do caixa:', error);
+            }
+        }
+        
+        // Salvar abertura de caixa
+        async function salvarAberturaCaixa() {
+            const valorInicial = parseFloat(document.getElementById('valorInicialInput').value);
+            const observacao = document.getElementById('observacaoAbertura').value;
+            
+            if (isNaN(valorInicial) || valorInicial < 0) {
+                mostrarAlerta('Por favor, insira um valor inicial válido', 'warning');
+                return;
+            }
+            
+            try {
+                elementos.btnSalvarAbertura.classList.add('loading');
+                
+                const data = await apiRequest('/caixa/abrir', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        valor_inicial: valorInicial,
+                        observacao: observacao
+                    })
+                });
+                
+                estadoApp.caixaAberto = true;
+                estadoApp.aberturaAtual = data.data;
+                
+                // Fechar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalAbrirCaixa'));
+                modal.hide();
+                
+                atualizarInterfaceCaixaAberto();
+                mostrarAlerta('Caixa aberto com sucesso!', 'success');
+                
+                // Limpar campos
+                document.getElementById('valorInicialInput').value = '0.00';
+                document.getElementById('observacaoAbertura').value = '';
+                
+            } catch (error) {
+                mostrarAlerta('Erro ao abrir caixa: ' + error.message, 'danger');
+            } finally {
+                elementos.btnSalvarAbertura.classList.remove('loading');
+            }
+        }
+        
+        // Carregar vendas
+        async function carregarVendas() {
+            try {
+                const data = await apiRequest('/vendas');
+                estadoApp.vendas = data.data || [];
+                atualizarRelatorioVendas();
+                atualizarResumoCaixa();
+            } catch (error) {
+                console.error('Erro ao carregar vendas:', error);
+            }
+        }
+        
+        // Carregar retiradas
+        async function carregarRetiradas() {
+            try {
+                if (!estadoApp.aberturaAtual) return;
+                
+                const data = await apiRequest(`/retiradas/caixa/${estadoApp.aberturaAtual.id}`);
+                estadoApp.retiradas = data.data || [];
+                atualizarResumoCaixa();
+            } catch (error) {
+                console.error('Erro ao carregar retiradas:', error);
+            }
+        }
+        
+        // Registrar retirada
+        async function registrarRetirada() {
+            const valor = parseFloat(document.getElementById('valorRetirada').value);
+            const observacao = document.getElementById('obsRetirada').value;
+            
+            if (isNaN(valor) || valor <= 0) {
+                mostrarAlerta('Por favor, insira um valor válido para retirada', 'warning');
+                return;
+            }
+            
+            try {
+                await apiRequest('/retiradas', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        valor: valor,
+                        observacao: observacao,
+                        caixa_abertura_id: estadoApp.aberturaAtual.id
+                    })
+                });
+                
+                await carregarRetiradas();
+                
+                // Limpar campos
+                document.getElementById('valorRetirada').value = '';
+                document.getElementById('obsRetirada').value = '';
+                
+                mostrarAlerta('Retirada registrada com sucesso!', 'success');
+            } catch (error) {
+                mostrarAlerta('Erro ao registrar retirada: ' + error.message, 'danger');
+            }
+        }
+        
+        // Abrir detalhes da venda
+        function abrirDetalhesVenda(vendaId) {
+            const venda = estadoApp.vendas.find(v => v.id == vendaId);
+            if (!venda) return;
+            
+            const conteudo = document.getElementById('detalhesVendaConteudo');
+            const dadosPedido = venda.dados_pedido || {};
+            
+            conteudo.innerHTML = `
+                <div class="mb-3">
+                    <strong>Data:</strong> ${formatarData(venda.data_venda)}
+                </div>
+                <div class="mb-3">
+                    <strong>Cliente:</strong> ${dadosPedido.nome_cliente || 'Não informado'}
+                </div>
+                <div class="mb-3">
+                    <strong>Telefone:</strong> ${dadosPedido.telefone_cliente || 'Não informado'}
+                </div>
+                <div class="mb-3">
+                    <strong>Tipo de Pedido:</strong> ${dadosPedido.tipo_pedido || 'Não informado'}
+                </div>
+                <div class="mb-3">
+                    <strong>Valor Total:</strong> ${formatarMoeda(venda.valor_total)}
+                </div>
+                <div class="mb-3">
+                    <strong>Produtos:</strong>
+                    <ul>
+                        ${(dadosPedido.produtos || []).map(produto => `
+                            <li>${produto.quantidade}x ${produto.nome_produto} - ${formatarMoeda(produto.valor)}</li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `;
+            
+            document.getElementById('tipoPagamentoSelect').value = venda.tipo_pagamento;
+            document.getElementById('btnSalvarAlteracoesVenda').setAttribute('data-venda-id', vendaId);
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalDetalhesVenda'));
+            modal.show();
+        }
+        
+        // Salvar alterações da venda
+        async function salvarAlteracoesVenda() {
+            const vendaId = this.getAttribute('data-venda-id');
+            const novoTipoPagamento = document.getElementById('tipoPagamentoSelect').value;
+            
+            try {
+                await apiRequest(`/vendas/${vendaId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        tipo_pagamento: novoTipoPagamento
+                    })
+                });
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalDetalhesVenda'));
+                modal.hide();
+                
+                // Atualizar localmente
+                const vendaIndex = estadoApp.vendas.findIndex(v => v.id == vendaId);
+                if (vendaIndex !== -1) {
+                    estadoApp.vendas[vendaIndex].tipo_pagamento = novoTipoPagamento;
+                }
+                
+                atualizarRelatorioVendas();
+                atualizarResumoCaixa();
+                mostrarAlerta('Venda atualizada com sucesso!', 'success');
+            } catch (error) {
+                mostrarAlerta('Erro ao atualizar venda: ' + error.message, 'danger');
+            }
+        }
+        
+        // Preparar fechamento de caixa
+        async function prepararFechamentoCaixa() {
+            try {
+                // Buscar dados atualizados
+                await carregarVendas();
+                await carregarRetiradas();
+                
+                const valorAbertura = estadoApp.aberturaAtual?.valor_inicial || 0;
+                const totalVendas = estadoApp.vendas.reduce((total, venda) => total + parseFloat(venda.valor_total), 0);
+                const totalRetiradas = estadoApp.retiradas.reduce((total, retirada) => total + parseFloat(retirada.valor), 0);
+                const saldoFinal = valorAbertura + totalVendas - totalRetiradas;
+                
+                // Atualizar resumo no modal
+                document.getElementById('resumoValorAbertura').textContent = formatarMoeda(valorAbertura);
+                document.getElementById('resumoTotalVendas').textContent = formatarMoeda(totalVendas);
+                document.getElementById('resumoTotalRetiradas').textContent = formatarMoeda(totalRetiradas);
+                document.getElementById('resumoSaldoFinal').textContent = formatarMoeda(saldoFinal);
+                
+                // Atualizar resumo de vendas por tipo de pagamento
+                const resumoVendasPagamento = document.getElementById('resumoVendasPagamento');
+                resumoVendasPagamento.innerHTML = '';
+                
+                estadoApp.tiposPagamento.forEach(tipo => {
+                    const vendasTipo = estadoApp.vendas.filter(venda => venda.tipo_pagamento === tipo);
+                    const totalTipo = vendasTipo.reduce((total, venda) => total + parseFloat(venda.valor_total), 0);
+                    
+                    const item = document.createElement('div');
+                    item.className = 'd-flex justify-content-between';
+                    item.innerHTML = `
+                        <span>${formatarTipoPagamento(tipo)}:</span>
+                        <span>${formatarMoeda(totalTipo)}</span>
+                    `;
+                    resumoVendasPagamento.appendChild(item);
+                });
+                
+                // Preparar dados para impressão
+                document.getElementById('impressaoData').textContent = new Date().toLocaleString('pt-BR');
+                document.getElementById('impressaoValorAbertura').textContent = formatarMoeda(valorAbertura);
+                document.getElementById('impressaoTotalVendas').textContent = formatarMoeda(totalVendas);
+                document.getElementById('impressaoTotalRetiradas').textContent = formatarMoeda(totalRetiradas);
+                document.getElementById('impressaoSaldoFinal').textContent = formatarMoeda(saldoFinal);
+                
+                const impressaoVendasPagamento = document.getElementById('impressaoVendasPagamento');
+                impressaoVendasPagamento.innerHTML = '';
+                
+                estadoApp.tiposPagamento.forEach(tipo => {
+                    const vendasTipo = estadoApp.vendas.filter(venda => venda.tipo_pagamento === tipo);
+                    const totalTipo = vendasTipo.reduce((total, venda) => total + parseFloat(venda.valor_total), 0);
+                    
+                    if (totalTipo > 0) {
+                        const item = document.createElement('p');
+                        item.innerHTML = `<strong>${formatarTipoPagamento(tipo)}:</strong> ${formatarMoeda(totalTipo)}`;
+                        impressaoVendasPagamento.appendChild(item);
+                    }
+                });
+                
+                const modal = new bootstrap.Modal(document.getElementById('modalFecharCaixa'));
+                modal.show();
+                
+            } catch (error) {
+                mostrarAlerta('Erro ao preparar fechamento: ' + error.message, 'danger');
+            }
+        }
+        
+        // Fechar caixa
+        async function fecharCaixa() {
+            const valorRetiradaFechamento = parseFloat(document.getElementById('valorRetiradaFechamento').value) || 0;
+            const obsRetiradaFechamento = document.getElementById('obsRetiradaFechamento').value;
+            
+            try {
+                elementos.btnConfirmarFechamento.classList.add('loading');
+                
+                await apiRequest('/caixa/fechar', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        caixa_abertura_id: estadoApp.aberturaAtual.id,
+                        observacoes: obsRetiradaFechamento
+                    })
+                });
+                
+                // Registrar retirada final se houver
+                if (valorRetiradaFechamento > 0) {
+                    await apiRequest('/retiradas', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            valor: valorRetiradaFechamento,
+                            observacao: 'Retirada final - ' + obsRetiradaFechamento,
+                            caixa_abertura_id: estadoApp.aberturaAtual.id
+                        })
+                    });
+                }
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalFecharCaixa'));
+                modal.hide();
+                
+                estadoApp.caixaAberto = false;
+                estadoApp.aberturaAtual = null;
+                estadoApp.vendas = [];
+                estadoApp.retiradas = [];
+                
+                atualizarInterfaceCaixaFechado();
+                mostrarAlerta('Caixa fechado com sucesso!', 'success');
+                
+            } catch (error) {
+                mostrarAlerta('Erro ao fechar caixa: ' + error.message, 'danger');
+            } finally {
+                elementos.btnConfirmarFechamento.classList.remove('loading');
+            }
+        }
+        
+        // Funções de interface
+        function atualizarInterfaceCaixaAberto() {
+            elementos.telaInicial.style.display = 'none';
+            elementos.dashboardCaixa.style.display = 'flex';
+            elementos.statusCaixa.innerHTML = '<i class="bi bi-circle-fill text-success"></i> Caixa Aberto';
+            elementos.statusCaixa.className = 'navbar-text status-caixa caixa-aberto';
+            
+            elementos.valorInicial.textContent = formatarMoeda(estadoApp.aberturaAtual.valor_inicial);
+            atualizarResumoCaixa();
+        }
+        
+        function atualizarInterfaceCaixaFechado() {
+            elementos.telaInicial.style.display = 'block';
+            elementos.dashboardCaixa.style.display = 'none';
+            elementos.statusCaixa.innerHTML = '<i class="bi bi-circle-fill text-danger"></i> Caixa Fechado';
+            elementos.statusCaixa.className = 'navbar-text status-caixa caixa-fechado';
+        }
+        
+        function atualizarRelatorioVendas() {
+            if (!elementos.paymentColumns) return;
+            
+            elementos.paymentColumns.innerHTML = '';
+            
+            estadoApp.tiposPagamento.forEach(tipo => {
+                const vendasTipo = estadoApp.vendas.filter(venda => venda.tipo_pagamento === tipo);
+                const totalTipo = vendasTipo.reduce((total, venda) => total + parseFloat(venda.valor_total), 0);
+                
+                const coluna = document.createElement('div');
+                coluna.className = 'col-md payment-column';
+                coluna.innerHTML = `
+                    <h6 class="text-center">${formatarTipoPagamento(tipo)}</h6>
+                    <div id="vendas-${tipo}">
+                        ${vendasTipo.map(venda => `
+                            <div class="sale-item" data-id="${venda.id}">
+                                ${formatarMoeda(venda.valor_total)}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="payment-total text-center">
+                        Total: ${formatarMoeda(totalTipo)}
+                    </div>
+                `;
+                
+                elementos.paymentColumns.appendChild(coluna);
+            });
+            
+            // Adicionar event listeners para os itens de venda
+            document.querySelectorAll('.sale-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const vendaId = this.getAttribute('data-id');
+                    abrirDetalhesVenda(vendaId);
+                });
+            });
+        }
+        
+        function atualizarResumoCaixa() {
+            const totalVendas = estadoApp.vendas.reduce((total, venda) => total + parseFloat(venda.valor_total), 0);
+            const totalRetiradas = estadoApp.retiradas.reduce((total, retirada) => total + parseFloat(retirada.valor), 0);
+            const saldoAtual = (estadoApp.aberturaAtual?.valor_inicial || 0) + totalVendas - totalRetiradas;
+            
+            elementos.totalVendas.textContent = formatarMoeda(totalVendas);
+            elementos.totalRetiradas.textContent = formatarMoeda(totalRetiradas);
+            elementos.saldoAtual.textContent = formatarMoeda(saldoAtual);
+        }
+        
+        function imprimirComprovante() {
+            window.print();
+        }
+        
+        // Funções auxiliares
+        function formatarMoeda(valor) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(valor || 0);
+        }
+        
+        function formatarData(data) {
+            return new Date(data).toLocaleString('pt-BR');
+        }
+        
+        function formatarTipoPagamento(tipo) {
+            const tipos = {
+                'DINHEIRO': 'Dinheiro',
+                'CARTAO_CREDITO': 'Cartão de Crédito',
+                'CARTAO_DEBITO': 'Cartão de Débito',
+                'PIX': 'PIX',
+                'OUTRO': 'Outro'
+            };
+            return tipos[tipo] || tipo;
+        }
+        
+        function mostrarAlerta(mensagem, tipo) {
+            const alerta = document.createElement('div');
+            alerta.className = `alert alert-${tipo} alert-dismissible fade show`;
+            alerta.style.position = 'fixed';
+            alerta.style.top = '20px';
+            alerta.style.right = '20px';
+            alerta.style.zIndex = '9999';
+            alerta.style.minWidth = '300px';
+            alerta.innerHTML = `
+                ${mensagem}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(alerta);
+            
+            setTimeout(() => {
+                if (alerta.parentNode) {
+                    alerta.parentNode.removeChild(alerta);
+                }
+            }, 5000);
+        }
+        
+        // Configurar atualização automática
+        setInterval(() => {
+            if (estadoApp.caixaAberto) {
+                carregarVendas();
+                carregarRetiradas();
+            }
+        }, 30000); // Atualizar a cada 30 segundos
+    </script>
+</body>
+</html>
