@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Tabela de abertura de caixa
+model CaixaAbertura {
+  id            String   @id @default(cuid())
+  data_abertura DateTime @default(now())
+  valor_inicial Float
+  observacao    String?
+  status        String   @default("ABERTO")
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // Relações
+  vendas        Venda[]
+  retiradas     Retirada[]
+  fechamentos   CaixaFechamento[]
+
+  @@map("caixa_abertura")
+}
+
+// Tabela de vendas
+model Venda {
+  id             String   @id @default(cuid())
+  data_venda     DateTime @default(now())
+  dados_pedido   Json
+  tipo_pagamento String   @default("PENDENTE")
+  valor_total    Float
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  // Relações
+  caixa_abertura_id String
+  caixa_abertura    CaixaAbertura @relation(fields: [caixa_abertura_id], references: [id], onDelete: Cascade)
+
+  @@map("vendas")
+}
+
+// Tabela de retiradas de caixa
+model Retirada {
+  id            String   @id @default(cuid())
+  data_retirada DateTime @default(now())
+  valor         Float
+  observacao    String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // Relações
+  caixa_abertura_id String
+  caixa_abertura    CaixaAbertura @relation(fields: [caixa_abertura_id], references: [id], onDelete: Cascade)
+
+  @@map("retiradas")
+}
+
+// Tabela de fechamento de caixa
+model CaixaFechamento {
+  id              String   @id @default(cuid())
+  data_fechamento DateTime @default(now())
+  valor_abertura  Float
+  total_vendas    Float
+  retiradas       Float
+  saldo_final     Float
+  observacoes     String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  // Relações
+  caixa_abertura_id String
+  caixa_abertura    CaixaAbertura @relation(fields: [caixa_abertura_id], references: [id], onDelete: Cascade)
+
+  @@map("caixa_fechamento")
+}
+
+// Tabela para logs do webhook
+model WebhookLog {
+  id          String   @id @default(cuid())
+  endpoint    String
+  method      String
+  headers     Json?
+  body        Json?
+  status_code Int?
+  response    Json?
+  ip_address  String?
+  user_agent  String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("webhook_logs")
+}
+
+// Tabela para configurações do sistema
+model Configuracao {
+  id         String   @id @default(cuid())
+  chave      String   @unique
+  valor      String
+  tipo       String   @default("string")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("configuracoes")
+}
