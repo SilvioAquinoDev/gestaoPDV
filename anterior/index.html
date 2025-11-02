@@ -1,0 +1,2706 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema PDV - Backend Proxy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .navbar {
+            background-color: var(--primary-color);
+        }
+
+        .card {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: none;
+            margin-bottom: 20px;
+        }
+
+        .btn-primary {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+
+        .status-caixa {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .caixa-aberto {
+            background-color: rgba(39, 174, 96, 0.2);
+            color: var(--success-color);
+        }
+
+        .caixa-fechado {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: var(--danger-color);
+        }
+
+        .payment-column {
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .payment-total {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .sale-item {
+            cursor: pointer;
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .sale-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .modal-lg {
+            max-width: 800px;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+        }
+
+        .saldo-info {
+            background-color: #e8f5e8;
+            border-left: 4px solid var(--success-color);
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .retirada-item {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .retirada-item:hover {
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            padding: 8px;
+            margin: -8px -8px 4px -8px;
+        }
+
+        .retirada-item:last-child {
+            border-bottom: none !important;
+            margin-bottom: 0 !important;
+        }
+
+        /* Estilos para as colunas de vendas manuais */
+        .manual-input-section {
+            border-left: 2px solid #e9ecef;
+            padding-left: 10px;
+        }
+
+        .vendas-lista {
+            font-size: 0.85rem;
+        }
+
+        .sale-item {
+            cursor: pointer;
+            padding: 4px 8px;
+            border-bottom: 1px solid #f8f9fa;
+            transition: background-color 0.2s;
+        }
+
+        .sale-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .sale-item.sistema {
+            border-left: 3px solid #0d6efd;
+        }
+
+        .sale-item.manual {
+            border-left: 3px solid #198754;
+        }
+
+        .manual-total {
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            padding-top: 5px;
+            border-top: 1px solid #dee2e6;
+            color: #198754;
+        }
+
+        .total-coluna {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border: 1px solid #dee2e6;
+        }
+
+        .payment-column {
+            margin-bottom: 20px;
+        }
+
+        .input-group-sm .form-control {
+            font-size: 0.8rem;
+        }
+
+        .input-group-sm .btn {
+            font-size: 0.7rem;
+        }
+
+        /* Estilos para as colunas idênticas */
+.payment-column {
+    margin-bottom: 25px;
+}
+
+.payment-column .card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: 1px solid #dee2e6;
+}
+
+.payment-column .card-header {
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.vendas-lista {
+    font-size: 0.85rem;
+    min-height: 40px;
+}
+
+.sale-item {
+    cursor: pointer;
+    padding: 6px 8px;
+    border-bottom: 1px solid #f8f9fa;
+    transition: background-color 0.2s;
+    margin-bottom: 2px;
+    border-radius: 4px;
+}
+
+.sale-item:hover {
+    background-color: #f8f9fa;
+}
+
+.sale-item.sistema {
+    border-left: 3px solid #0d6efd;
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.sale-item.manual {
+    border-left: 3px solid #198754;
+    background-color: rgba(25, 135, 84, 0.05);
+}
+
+.payment-total {
+    font-weight: bold;
+    font-size: 0.9rem;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: 1px solid #dee2e6;
+}
+
+.total-combinado {
+    font-weight: bold;
+    font-size: 0.95rem;
+    background: linear-gradient(135deg, #fff3cd, #ffecb5);
+    border: 2px solid #ffc107;
+}
+
+.manual-input {
+    font-size: 0.8rem;
+}
+
+.input-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+/* Estilo para o botão de remover */
+.btn-outline-danger {
+    border: 1px solid #dc3545;
+}
+
+.btn-outline-danger:hover {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Ajustes responsivos */
+@media (max-width: 768px) {
+    .payment-column .col-6 {
+        margin-bottom: 15px;
+    }
+}
+
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+
+            .print-section {
+                display: block !important;
+            }
+        }
+
+        .print-section {
+            display: none;
+        }
+
+        /* Estilos específicos para impressão térmica 80mm */
+        @media print {
+            body {
+                font-family: 'Courier New', monospace;
+                font-size: 12px;
+                line-height: 1;
+                margin: 0;
+                padding: 0;
+                background: white;
+                color: black;
+            }
+
+            .impressao-termica {
+                width: 80mm;
+                max-width: 80mm;
+                margin: 0;
+                padding: 5px;
+                font-family: 'Courier New', monospace;
+                font-size: 12px;
+                line-height: 1;
+            }
+
+            .impressao-termica * {
+                font-family: 'Courier New', monospace !important;
+                font-size: 12px !important;
+                line-height: 1 !important;
+            }
+
+            .impressao-termica .text-center {
+                text-align: center !important;
+            }
+
+            .impressao-termica .text-left {
+                text-align: left !important;
+            }
+
+            .impressao-termica .text-right {
+                text-align: right !important;
+            }
+
+            .impressao-termica .fw-bold {
+                font-weight: bold !important;
+            }
+
+            .impressao-termica .border-top {
+                border-top: 1px solid black !important;
+            }
+
+            .impressao-termica .border-bottom {
+                border-bottom: 1px solid black !important;
+            }
+
+            .impressao-termica table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+            }
+
+            .impressao-termica th,
+            .impressao-termica td {
+                padding: 2px 1px !important;
+                border: none !important;
+            }
+
+            .impressao-termica .linha-divisoria {
+                border-top: 1px dashed black !important;
+                margin: 3px 0 !important;
+            }
+
+            .impressao-termica .linha-dupla {
+                border-top: 2px solid black !important;
+                margin: 4px 0 !important;
+            }
+
+            /* Esconder tudo exceto a área de impressão térmica */
+            body * {
+                display: none !important;
+            }
+
+            .impressao-termica,
+            .impressao-termica * {
+                display: block !important;
+                visibility: visible !important;
+            }
+
+            .impressao-termica .no-print-termica {
+                display: none !important;
+            }
+        }
+
+        /* Para visualização em tela */
+        .preview-termica {
+            width: 80mm;
+            min-height: 200mm;
+            margin: 0 auto;
+            padding: 5px;
+            background: white;
+            border: 1px solid #ccc;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-cash-coin"></i> Sistema PDV - Backend Proxy
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text" id="statusCaixa">
+                    <i class="bi bi-circle-fill"></i> Caixa Fechado
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Tela Inicial -->
+        <div id="telaInicial" class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <h1 class="card-title">Sistema de Gestão PDV</h1>
+                        <p class="card-text">Conectado via Backend Seguro</p>
+                        <button id="btnAbrirCaixa" class="btn btn-primary btn-lg" data-bs-toggle="modal"
+                            data-bs-target="#modalAbrirCaixa">
+                            <i class="bi bi-cash-stack"></i> Abrir Caixa
+                        </button>
+
+                        <!-- Status da Conexão -->
+                        <div class="mt-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">Status do Sistema</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <strong>Backend:</strong>
+                                        <span id="statusBackend" class="badge bg-secondary">Verificando...</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Banco de Dados:</strong>
+                                        <span id="statusDatabase" class="badge bg-secondary">Verificando...</span>
+                                    </div>
+                                    <button id="btnVerificarStatus" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-arrow-clockwise"></i> Verificar Status
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard do Caixa -->
+        <div id="dashboardCaixa" class="row" style="display: none;">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">Resumo do Caixa</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <strong>Valor Inicial:</strong> <span id="valorInicial">R$ 0,00</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Vendas em Dinheiro:</strong> <span id="vendasDinheiro">R$ 0,00</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Saldo Total de Pagamento:</strong> <span id="vendasOutros">R$ 0,00</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Total de Retiradas:</strong> <span id="totalRetiradas">R$ 0,00</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Saldo Atual (Dinheiro):</strong> <span id="saldoAtual"
+                                class="fw-bold text-success">R$ 0,00</span>
+                        </div>
+
+                        <!-- Informação sobre o cálculo -->
+                        <div class="saldo-info">
+                            <small>
+                                <i class="bi bi-info-circle"></i>
+                                <strong>Como é calculado:</strong><br>
+                                Saldo = Valor Inicial + Vendas em Dinheiro - Retiradas
+                                <em>Outras Formas mostra o TOTAL de todas as vendas</em>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">Nova Retirada</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="valorRetirada" class="form-label">Valor</label>
+                            <input type="number" class="form-control" id="valorRetirada" step="0.01" min="0.01">
+                        </div>
+                        <div class="mb-3">
+                            <label for="obsRetirada" class="form-label">Observação</label>
+                            <textarea class="form-control" id="obsRetirada" rows="2"></textarea>
+                        </div>
+                        <button id="btnRegistrarRetirada" class="btn btn-success w-100">
+                            <i class="bi bi-cash"></i> Registrar Retirada
+                        </button>
+                    </div>
+                </div>
+                <!-- Adicione esta seção após a div da "Nova Retirada" -->
+                <div class="card mt-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="card-title mb-0">Detalhes das Retiradas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="listaRetiradas">
+                            <!-- As retiradas serão carregadas dinamicamente aqui -->
+                            <div class="text-center text-muted py-3">
+                                <i class="bi bi-cash-stack"></i><br>
+                                Nenhuma retirada registrada
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle"></i>
+                                Clique em uma retirada para ver mais detalhes
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Relatório de Vendas</h5>
+                        <div>
+                            <button id="btnLimparManuais" class="btn btn-outline-warning btn-sm me-2" onclick="limparTodasVendasManuais()">
+            <i class="bi bi-trash"></i> Limpar Manuais
+        </button>
+                            <button id="btnImprimirParcial" class="btn btn-outline-primary btn-sm me-2"
+                                onclick="previsualizarImpressaoTermica('parcial')">
+                                <i class="bi bi-printer"></i> Imprimir Parcial
+                            </button>
+                            <button id="btnAtualizarVendas" class="btn btn-outline-secondary btn-sm me-2">
+                                <i class="bi bi-arrow-clockwise"></i> Atualizar
+                            </button>
+                            <button id="btnFecharCaixa" class="btn btn-danger">
+                                <i class="bi bi-lock-fill"></i> Fechar Caixa
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="alert alert-info py-2">
+                                    <small>
+                                        <i class="bi bi-info-circle"></i>
+                                        <strong>Instruções:</strong> Use as colunas à direita para adicionar vendas
+                                        manuais que não foram registradas no sistema.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" id="paymentColumns">
+                            <!-- Colunas de tipos de pagamento serão geradas dinamicamente -->
+                        </div>
+
+                        <!-- Linha de totais -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card bg-light">
+                                    <div class="card-body py-3">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6 class="mb-2">Resumo de Vendas</h6>
+                                                <div class="d-flex justify-content-between">
+                                                    <span>Vendas do Sistema:</span>
+                                                    <span id="totalVendasSistema" class="fw-bold">R$ 0,00</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between">
+                                                    <span>Vendas Manuais:</span>
+                                                    <span id="totalVendasManuais" class="fw-bold">R$ 0,00</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="d-flex justify-content-between border-top pt-2">
+                                                    <span class="fs-5">Diferença Geral:</span>
+                                                    <span id="totalGeralVendas" class="fs-5 text-success fw-bold">R$
+                                                        0,00</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!--div class="card-body">
+                        <div class="row" id="paymentColumns">
+                            <-- Colunas de tipos de pagamento serão geradas dinamicamente ->
+                        </div>
+                    </div-->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Abrir Caixa -->
+    <div class="modal fade" id="modalAbrirCaixa" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Abrir Caixa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="valorInicialInput" class="form-label">Valor Inicial em Caixa</label>
+                        <input type="number" class="form-control" id="valorInicialInput" step="0.01" min="0"
+                            value="0.00">
+                    </div>
+                    <div class="mb-3">
+                        <label for="observacaoAbertura" class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacaoAbertura" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btnSalvarAbertura">
+                        <i class="bi bi-check-lg"></i> Abrir Caixa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detalhes da Venda -->
+    <div class="modal fade" id="modalDetalhesVenda" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalhes da Venda</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="detalhesVendaConteudo">
+                        <!-- Conteúdo será preenchido dinamicamente -->
+                    </div>
+                    <div class="mt-3">
+                        <label for="tipoPagamentoSelect" class="form-label">Tipo de Pagamento</label>
+                        <select class="form-select" id="tipoPagamentoSelect">
+                            <option value="DINHEIRO">Dinheiro</option>
+                            <option value="CARTAO_CREDITO">Cartão de Crédito</option>
+                            <option value="CARTAO_DEBITO">Cartão de Débito</option>
+                            <option value="PIX">PIX</option>
+                            <option value="OUTRO">Outro</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-primary" id="btnSalvarAlteracoesVenda">
+                        <i class="bi bi-check-lg"></i> Salvar Alterações
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Fechar Caixa -->
+    <div class="modal fade" id="modalFecharCaixa" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Fechar Caixa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="valorRetiradaFechamento" class="form-label">Valor de Retirada Final</label>
+                                <input type="number" class="form-control" id="valorRetiradaFechamento" step="0.01"
+                                    min="0">
+                            </div>
+                            <div class="mb-3">
+                                <label for="obsRetiradaFechamento" class="form-label">Observação da Retirada</label>
+                                <textarea class="form-control" id="obsRetiradaFechamento" rows="3"></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">Resumo do Fechamento</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <strong>Valor de Abertura:</strong> <span id="resumoValorAbertura">R$
+                                            0,00</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Vendas em Dinheiro:</strong> <span id="resumoVendasDinheiro">R$
+                                            0,00</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Total Faturado:</strong> <span id="resumoVendasOutros">R$ 0,00</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Total de Retiradas:</strong> <span id="resumoTotalRetiradas">R$
+                                            0,00</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>Saldo Final (Dinheiro):</strong> <span id="resumoSaldoFinal"
+                                            class="fw-bold text-success">R$ 0,00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <h6>Vendas por Tipo de Pagamento</h6>
+                        <div id="resumoVendasPagamento">
+                            <!-- Resumo será preenchido dinamicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Área de impressão -->
+                    <div id="areaImpressao" class="print-section mt-4">
+                        <div class="text-center">
+                            <h4>COMPROVANTE DE FECHAMENTO DE CAIXA</h4>
+                            <p>Data: <span id="impressaoData"></span></p>
+                        </div>
+                        <hr>
+                        <div>
+                            <p><strong>Valor de Abertura:</strong> <span id="impressaoValorAbertura"></span></p>
+                            <p><strong>Vendas em Dinheiro:</strong> <span id="impressaoVendasDinheiro"></span></p>
+                            <p><strong>Outras Formas de Pagamento:</strong> <span id="impressaoVendasOutros"></span></p>
+                            <div id="impressaoVendasPagamento">
+                                <!-- Detalhes das vendas por tipo de pagamento -->
+                            </div>
+                            <p><strong>Total de Retiradas:</strong> <span id="impressaoTotalRetiradas"></span></p>
+                            <hr>
+                            <p><strong>Saldo Final (Dinheiro):</strong> <span id="impressaoSaldoFinal"
+                                    class="fw-bold">R$ 0,00</span></p>
+                        </div>
+                        <hr>
+                        <div class="text-center">
+                            <p>--- FIM DO COMPROVANTE ---</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-outline-primary"
+                        onclick="previsualizarImpressaoTermica('fechamento')">
+                        <i class="bi bi-eye"></i> Pré-visualizar
+                    </button>
+                    <button type="button" class="btn btn-warning" id="btnImprimirComprovante">
+                        <i class="bi bi-printer"></i> Impressora Normal
+                    </button>
+                    <button type="button" class="btn btn-danger" id="btnConfirmarFechamento">
+                        <i class="bi bi-lock-fill"></i> Fechar Caixa
+                    </button>
+                </div>
+                <!--div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-warning" id="btnImprimirComprovante">
+                        <i class="bi bi-printer"></i> Imprimir Comprovante
+                    </button>
+                    <button type="button" class="btn btn-danger" id="btnConfirmarFechamento">
+                        <i class="bi bi-lock-fill"></i> Fechar Caixa
+                    </button>
+                </div-->
+            </div>
+        </div>
+    </div>
+    <!-- Modal Detalhes da Retirada -->
+    <div class="modal fade" id="modalDetalhesRetirada" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalhes da Retirada</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="detalhesRetiradaConteudo">
+                        <!-- Conteúdo será preenchido dinamicamente -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-danger" id="btnExcluirRetirada">
+                        <i class="bi bi-trash"></i> Excluir Retirada
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Pré-visualização Impressão Térmica -->
+    <div class="modal fade" id="modalPreviewImpressao" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Pré-visualização - Impressora Térmica 80mm</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <small class="text-muted">Visualização do que será impresso na impressora térmica</small>
+                    </div>
+                    <div class="preview-termica" id="previewImpressaoTermica">
+                        <!-- Conteúdo será preenchido dinamicamente -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-primary" id="btnImprimirTermica">
+                        <i class="bi bi-printer"></i> Imprimir na Impressora Térmica
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Configuração da API
+        const API_URL = window.location.hostname === 'localhost'
+            ? 'http://localhost:3000'
+            : ''; // URL relativa em produção
+
+        // Estado da aplicação
+        let estadoApp = {
+            caixaAberto: false,
+            aberturaAtual: null,
+            vendas: [],
+            retiradas: [],
+            tiposPagamento: ['DINHEIRO', 'CARTAO_CREDITO', 'CARTAO_DEBITO', 'PIX', 'OUTRO'],
+            vendasManuais: {
+                'DINHEIRO': [],
+                'CARTAO_CREDITO': [],
+                'CARTAO_DEBITO': [],
+                'PIX': [],
+                'OUTRO': []
+            }
+        };
+
+        // Elementos DOM
+        let elementos = {};
+
+        // Inicialização da aplicação
+        document.addEventListener('DOMContentLoaded', function () {
+            inicializarElementos();
+            configurarEventListeners();
+            verificarStatusSistema();
+        });
+
+        function inicializarElementos() {
+            elementos = {
+                telaInicial: document.getElementById('telaInicial'),
+                dashboardCaixa: document.getElementById('dashboardCaixa'),
+                statusCaixa: document.getElementById('statusCaixa'),
+                statusBackend: document.getElementById('statusBackend'),
+                statusDatabase: document.getElementById('statusDatabase'),
+                btnAbrirCaixa: document.getElementById('btnAbrirCaixa'),
+                btnVerificarStatus: document.getElementById('btnVerificarStatus'),
+                btnFecharCaixa: document.getElementById('btnFecharCaixa'),
+                btnAtualizarVendas: document.getElementById('btnAtualizarVendas'),
+                paymentColumns: document.getElementById('paymentColumns'),
+                valorInicial: document.getElementById('valorInicial'),
+                vendasDinheiro: document.getElementById('vendasDinheiro'),
+                vendasOutros: document.getElementById('vendasOutros'),
+                totalRetiradas: document.getElementById('totalRetiradas'),
+                saldoAtual: document.getElementById('saldoAtual'),
+                btnSalvarAbertura: document.getElementById('btnSalvarAbertura'),
+                btnRegistrarRetirada: document.getElementById('btnRegistrarRetirada'),
+                btnSalvarAlteracoesVenda: document.getElementById('btnSalvarAlteracoesVenda'),
+                btnImprimirComprovante: document.getElementById('btnImprimirComprovante'),
+                btnConfirmarFechamento: document.getElementById('btnConfirmarFechamento'),
+                listaRetiradas: document.getElementById('listaRetiradas'),
+                btnExcluirRetirada: document.getElementById('btnExcluirRetirada'),
+                btnImprimirTermica: document.getElementById('btnImprimirTermica'),
+                previewImpressaoTermica: document.getElementById('previewImpressaoTermica')
+            };
+        }
+
+        function configurarEventListeners() {
+            elementos.btnVerificarStatus.addEventListener('click', verificarStatusSistema);
+            elementos.btnSalvarAbertura.addEventListener('click', salvarAberturaCaixa);
+            elementos.btnFecharCaixa.addEventListener('click', prepararFechamentoCaixa);
+            elementos.btnAtualizarVendas.addEventListener('click', carregarVendas);
+            elementos.btnRegistrarRetirada.addEventListener('click', registrarRetirada);
+            elementos.btnSalvarAlteracoesVenda.addEventListener('click', salvarAlteracoesVenda);
+            elementos.btnImprimirComprovante.addEventListener('click', imprimirComprovante);
+            elementos.btnConfirmarFechamento.addEventListener('click', fecharCaixa);
+            elementos.btnExcluirRetirada.addEventListener('click', excluirRetirada);
+            elementos.btnImprimirTermica.addEventListener('click', imprimirTermica);
+        }
+
+        // Função para fazer requisições à API
+        async function apiRequest(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_URL}${endpoint}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erro ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error(`Erro na requisição ${endpoint}:`, error);
+                throw error;
+            }
+        }
+
+        // Verificar status do sistema
+        async function verificarStatusSistema() {
+            try {
+                elementos.btnVerificarStatus.classList.add('loading');
+
+                const health = await apiRequest('/health');
+
+                // Atualizar status do backend
+                elementos.statusBackend.textContent = 'Online';
+                elementos.statusBackend.className = 'badge bg-success';
+
+                // Atualizar status do banco de dados
+                elementos.statusDatabase.textContent = health.database === 'connected' ? 'Conectado' : 'Desconectado';
+                elementos.statusDatabase.className = health.database === 'connected' ? 'badge bg-success' : 'badge bg-warning';
+
+                // Se o sistema está online, verificar estado do caixa
+                if (health.status === 'online') {
+                    await verificarEstadoCaixa();
+                }
+
+            } catch (error) {
+                elementos.statusBackend.textContent = 'Offline';
+                elementos.statusBackend.className = 'badge bg-danger';
+                elementos.statusDatabase.textContent = 'Desconectado';
+                elementos.statusDatabase.className = 'badge bg-danger';
+
+                console.error('Erro ao verificar status do sistema:', error);
+            } finally {
+                elementos.btnVerificarStatus.classList.remove('loading');
+            }
+        }
+
+        // Verificar estado do caixa
+        async function verificarEstadoCaixa() {
+            try {
+                const data = await apiRequest('/caixa/status');
+                estadoApp.caixaAberto = data.caixaAberto;
+                estadoApp.aberturaAtual = data.caixaAtual;
+
+                if (estadoApp.caixaAberto) {
+                    atualizarInterfaceCaixaAberto();
+                    await carregarVendas();
+                    await carregarRetiradas();
+                } else {
+                    atualizarInterfaceCaixaFechado();
+                }
+            } catch (error) {
+                console.error('Erro ao verificar estado do caixa:', error);
+            }
+        }
+
+        // Salvar abertura de caixa
+        async function salvarAberturaCaixa() {
+            const valorInicial = parseFloat(document.getElementById('valorInicialInput').value);
+            const observacao = document.getElementById('observacaoAbertura').value;
+
+            if (isNaN(valorInicial) || valorInicial < 0) {
+                mostrarAlerta('Por favor, insira um valor inicial válido', 'warning');
+                return;
+            }
+
+            try {
+                elementos.btnSalvarAbertura.classList.add('loading');
+
+                const data = await apiRequest('/caixa/abrir', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        valor_inicial: valorInicial,
+                        observacao: observacao
+                    })
+                });
+
+                estadoApp.caixaAberto = true;
+                estadoApp.aberturaAtual = data.data;
+
+                // Fechar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalAbrirCaixa'));
+                modal.hide();
+
+                atualizarInterfaceCaixaAberto();
+                mostrarAlerta('Caixa aberto com sucesso!', 'success');
+
+                // Limpar campos
+                document.getElementById('valorInicialInput').value = '0.00';
+                document.getElementById('observacaoAbertura').value = '';
+
+            } catch (error) {
+                mostrarAlerta('Erro ao abrir caixa: ' + error.message, 'danger');
+            } finally {
+                elementos.btnSalvarAbertura.classList.remove('loading');
+            }
+        }
+
+        // Carregar vendas
+        async function carregarVendas() {
+            try {
+                const data = await apiRequest('/vendas');
+                estadoApp.vendas = data.data || [];
+                atualizarRelatorioVendas();
+                atualizarResumoCaixaComManuais();
+            } catch (error) {
+                console.error('Erro ao carregar vendas:', error);
+            }
+        }
+
+        // Carregar retiradas
+        async function carregarRetiradas() {
+            try {
+                if (!estadoApp.aberturaAtual) return;
+
+                const data = await apiRequest(`/retiradas/caixa/${estadoApp.aberturaAtual.id}`);
+                estadoApp.retiradas = data.data || [];
+                atualizarListaRetiradas();
+                atualizarResumoCaixaComManuais();
+            } catch (error) {
+                console.error('Erro ao carregar retiradas:', error);
+            }
+        }
+
+        // Registrar retirada
+        async function registrarRetirada() {
+            const valor = parseFloat(document.getElementById('valorRetirada').value);
+            const observacao = document.getElementById('obsRetirada').value;
+
+            if (isNaN(valor) || valor <= 0) {
+                mostrarAlerta('Por favor, insira um valor válido para retirada', 'warning');
+                return;
+            }
+
+            try {
+                elementos.btnRegistrarRetirada.classList.add('loading');
+
+                await apiRequest('/retiradas', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        valor: valor,
+                        observacao: observacao,
+                        caixa_abertura_id: estadoApp.aberturaAtual.id
+                    })
+                });
+
+                await carregarRetiradas();
+
+                // Limpar campos
+                document.getElementById('valorRetirada').value = '';
+                document.getElementById('obsRetirada').value = '';
+
+                mostrarAlerta('Retirada registrada com sucesso!', 'success');
+
+            } catch (error) {
+                mostrarAlerta('Erro ao registrar retirada: ' + error.message, 'danger');
+            } finally {
+                elementos.btnRegistrarRetirada.classList.remove('loading');
+            }
+        }
+
+        /*/ Registrar retirada
+        async function registrarRetirada() {
+            const valor = parseFloat(document.getElementById('valorRetirada').value);
+            const observacao = document.getElementById('obsRetirada').value;
+
+            if (isNaN(valor) || valor <= 0) {
+                mostrarAlerta('Por favor, insira um valor válido para retirada', 'warning');
+                return;
+            }
+
+            try {
+                await apiRequest('/retiradas', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        valor: valor,
+                        observacao: observacao,
+                        caixa_abertura_id: estadoApp.aberturaAtual.id
+                    })
+                });
+
+                await carregarRetiradas();
+
+                // Limpar campos
+                document.getElementById('valorRetirada').value = '';
+                document.getElementById('obsRetirada').value = '';
+
+                mostrarAlerta('Retirada registrada com sucesso!', 'success');
+            } catch (error) {
+                mostrarAlerta('Erro ao registrar retirada: ' + error.message, 'danger');
+            }
+        }*/
+
+        // Abrir detalhes da venda
+        function abrirDetalhesVenda(vendaId) {
+            const venda = estadoApp.vendas.find(v => v.id == vendaId);
+            if (!venda) return;
+
+            const conteudo = document.getElementById('detalhesVendaConteudo');
+            const dadosPedido = venda.dados_pedido || {};
+
+            conteudo.innerHTML = `
+                <div class="mb-3">
+                    <strong>Data:</strong> ${formatarData(venda.data_venda)}
+                </div>
+                <div class="mb-3">
+                    <strong>Cliente:</strong> ${dadosPedido.nome_cliente || 'Não informado'}
+                </div>
+                <div class="mb-3">
+                    <strong>Telefone:</strong> ${dadosPedido.telefone_cliente || 'Não informado'}
+                </div>
+                <div class="mb-3">
+                    <strong>Tipo de Pedido:</strong> ${dadosPedido.tipo_pedido || 'Não informado'}
+                </div>
+                <div class="mb-3">
+                    <strong>Valor Total:</strong> ${formatarMoeda(venda.valor_total)}
+                </div>
+                <div class="mb-3">
+                    <strong>Produtos:</strong>
+                    <ul>
+                        ${(dadosPedido.produtos || []).map(produto => `
+                            <li>${produto.quantidade}x ${produto.nome_produto} - ${formatarMoeda(produto.valor)}</li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `;
+
+            document.getElementById('tipoPagamentoSelect').value = venda.tipo_pagamento;
+            document.getElementById('btnSalvarAlteracoesVenda').setAttribute('data-venda-id', vendaId);
+
+            const modal = new bootstrap.Modal(document.getElementById('modalDetalhesVenda'));
+            modal.show();
+        }
+
+        // Salvar alterações da venda
+        async function salvarAlteracoesVenda() {
+            const vendaId = this.getAttribute('data-venda-id');
+            const novoTipoPagamento = document.getElementById('tipoPagamentoSelect').value;
+
+            try {
+                await apiRequest(`/vendas/${vendaId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        tipo_pagamento: novoTipoPagamento
+                    })
+                });
+
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalDetalhesVenda'));
+                modal.hide();
+
+                // Atualizar localmente
+                const vendaIndex = estadoApp.vendas.findIndex(v => v.id == vendaId);
+                if (vendaIndex !== -1) {
+                    estadoApp.vendas[vendaIndex].tipo_pagamento = novoTipoPagamento;
+                }
+
+                atualizarRelatorioVendas();
+                atualizarResumoCaixaComManuais();
+                mostrarAlerta('Venda atualizada com sucesso!', 'success');
+            } catch (error) {
+                mostrarAlerta('Erro ao atualizar venda: ' + error.message, 'danger');
+            }
+        }
+        /*----------------------------------------------------------------------------------------*/
+
+        // Função atualizarResumoCaixa - MODIFICADA para somar TODOS os tipos de pagamento
+        function atualizarResumoCaixa() {
+            console.log('🔄 Atualizando resumo do caixa...');
+            console.log('Vendas:', estadoApp.vendas);
+            console.log('Retiradas:', estadoApp.retiradas);
+            console.log('Abertura:', estadoApp.aberturaAtual);
+
+            // Calcular vendas em dinheiro
+            const vendasDinheiro = estadoApp.vendas
+                .filter(venda => venda.tipo_pagamento === 'DINHEIRO')
+                .reduce((total, venda) => {
+                    const valor = parseFloat(venda.valor_total) || 0;
+                    console.log(`Venda DINHEIRO: ${venda.valor_total} -> ${valor}`);
+                    return total + valor;
+                }, 0);
+
+            // MODIFICAÇÃO AQUI: Calcular TODAS as formas de pagamento (incluindo dinheiro)
+            const todasVendas = estadoApp.vendas
+                .reduce((total, venda) => {
+                    const valor = parseFloat(venda.valor_total) || 0;
+                    return total + valor;
+                }, 0);
+
+            // Calcular total de retiradas
+            const totalRetiradas = estadoApp.retiradas.reduce((total, retirada) => {
+                const valor = parseFloat(retirada.valor) || 0;
+                console.log(`Retirada: ${retirada.valor} -> ${valor}`);
+                return total + valor;
+            }, 0);
+
+            // Calcular valor inicial
+            const valorInicial = parseFloat(estadoApp.aberturaAtual?.valor_inicial) || 0;
+            console.log(`Valor inicial: ${valorInicial}`);
+
+            // Calcular saldo atual (APENAS DINHEIRO) - FÓRMULA CORRETA
+            const saldoAtual = valorInicial + vendasDinheiro - totalRetiradas;
+
+            console.log(`Cálculo: ${valorInicial} + ${vendasDinheiro} - ${totalRetiradas} = ${saldoAtual}`);
+
+            // Atualizar interface - MODIFICAÇÃO AQUI: usar todasVendas em vez de vendasOutros
+            elementos.valorInicial.textContent = formatarMoeda(valorInicial);
+            elementos.vendasDinheiro.textContent = formatarMoeda(vendasDinheiro);
+            elementos.vendasOutros.textContent = formatarMoeda(todasVendas); // AGORA MOSTRA O TOTAL DE TODAS AS VENDAS
+            elementos.totalRetiradas.textContent = formatarMoeda(totalRetiradas);
+            elementos.saldoAtual.textContent = formatarMoeda(saldoAtual);
+
+            // Destacar saldo negativo
+            if (saldoAtual < 0) {
+                elementos.saldoAtual.classList.add('text-danger');
+                elementos.saldoAtual.classList.remove('text-success');
+            } else {
+                elementos.saldoAtual.classList.add('text-success');
+                elementos.saldoAtual.classList.remove('text-danger');
+            }
+        }
+        // Função para atualizar a lista de retiradas na interface
+        function atualizarListaRetiradas() {
+            const listaRetiradas = elementos.listaRetiradas;
+
+            if (!estadoApp.retiradas || estadoApp.retiradas.length === 0) {
+                listaRetiradas.innerHTML = `
+            <div class="text-center text-muted py-3">
+                <i class="bi bi-cash-stack"></i><br>
+                Nenhuma retirada registrada
+            </div>
+        `;
+                return;
+            }
+
+            // Ordenar retiradas por data (mais recente primeiro)
+            const retiradasOrdenadas = [...estadoApp.retiradas].sort((a, b) =>
+                new Date(b.data_retirada || b.created_at) - new Date(a.data_retirada || a.created_at)
+            );
+
+            listaRetiradas.innerHTML = retiradasOrdenadas.map(retirada => {
+                const data = new Date(retirada.data_retirada || retirada.created_at);
+                const valor = parseFloat(retirada.valor) || 0;
+                const observacao = retirada.observacao || 'Sem observação';
+
+                return `
+            <div class="retirada-item border-bottom pb-2 mb-2" data-id="${retirada.id}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <div class="fw-bold text-danger">${formatarMoeda(valor)}</div>
+                        <div class="small text-muted">${observacao}</div>
+                    </div>
+                    <div class="ms-2">
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </div>
+                </div>
+            </div>
+        `;
+            }).join('');
+
+            // Adicionar event listeners para os itens de retirada
+            document.querySelectorAll('.retirada-item').forEach(item => {
+                item.addEventListener('click', function () {
+                    const retiradaId = this.getAttribute('data-id');
+                    abrirDetalhesRetirada(retiradaId);
+                });
+            });
+        }
+
+        // Função para abrir detalhes da retirada
+        function abrirDetalhesRetirada(retiradaId) {
+            const retirada = estadoApp.retiradas.find(r => r.id == retiradaId);
+            if (!retirada) return;
+
+            const data = new Date(retirada.data_retirada || retirada.created_at);
+            const valor = parseFloat(retirada.valor) || 0;
+            const observacao = retirada.observacao || 'Sem observação';
+
+            const conteudo = document.getElementById('detalhesRetiradaConteudo');
+            conteudo.innerHTML = `
+        <div class="mb-3">
+            <strong>Valor:</strong>
+            <div class="fs-4 text-danger">${formatarMoeda(valor)}</div>
+        </div>
+        <div class="mb-3">
+            <strong>Data e Hora:</strong>
+            <div>${data.toLocaleString('pt-BR')}</div>
+        </div>
+        <div class="mb-3">
+            <strong>Observação:</strong>
+            <div class="p-2 bg-light rounded">${observacao}</div>
+        </div>
+        ${retirada.caixa_abertura_id ? `
+        <div class="mb-3">
+            <strong>Caixa:</strong>
+            <div>ID ${retirada.caixa_abertura_id}</div>
+        </div>
+        ` : ''}
+    `;
+
+            // Configurar o botão de excluir
+            elementos.btnExcluirRetirada.setAttribute('data-retirada-id', retiradaId);
+
+            const modal = new bootstrap.Modal(document.getElementById('modalDetalhesRetirada'));
+            modal.show();
+        }
+
+        // Função para excluir retirada
+        async function excluirRetirada() {
+            const retiradaId = this.getAttribute('data-retirada-id');
+
+            if (!retiradaId) {
+                mostrarAlerta('ID da retirada não encontrado', 'danger');
+                return;
+            }
+
+            if (!confirm('Tem certeza que deseja excluir esta retirada? Esta ação não pode ser desfeita.')) {
+                return;
+            }
+
+            try {
+                elementos.btnExcluirRetirada.classList.add('loading');
+
+                await apiRequest(`/retiradas/${retiradaId}`, {
+                    method: 'DELETE'
+                });
+
+                // Fechar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalDetalhesRetirada'));
+                modal.hide();
+
+                // Atualizar dados
+                await carregarRetiradas();
+
+                mostrarAlerta('Retirada excluída com sucesso!', 'success');
+
+            } catch (error) {
+                console.error('Erro ao excluir retirada:', error);
+                mostrarAlerta('Erro ao excluir retirada: ' + error.message, 'danger');
+            } finally {
+                elementos.btnExcluirRetirada.classList.remove('loading');
+            }
+        }
+
+
+        /*/ Função atualizarResumoCaixa - CORRIGIDA
+        function atualizarResumoCaixa() {
+            console.log('🔄 Atualizando resumo do caixa...');
+            console.log('Vendas:', estadoApp.vendas);
+            console.log('Retiradas:', estadoApp.retiradas);
+            console.log('Abertura:', estadoApp.aberturaAtual);
+
+            // Calcular vendas em dinheiro
+            const vendasDinheiro = estadoApp.vendas
+                .filter(venda => venda.tipo_pagamento === 'DINHEIRO')
+                .reduce((total, venda) => {
+                    const valor = parseFloat(venda.valor_total) || 0;
+                    console.log(`Venda DINHEIRO: ${venda.valor_total} -> ${valor}`);
+                    return total + valor;
+                }, 0);
+
+            // Calcular outras formas de pagamento
+            const vendasOutros = estadoApp.vendas
+                .filter(venda => venda.tipo_pagamento !== 'DINHEIRO')
+                .reduce((total, venda) => {
+                    const valor = parseFloat(venda.valor_total) || 0;
+                    return total + valor;
+                }, 0);
+
+            // Calcular total de retiradas
+            const totalRetiradas = estadoApp.retiradas.reduce((total, retirada) => {
+                const valor = parseFloat(retirada.valor) || 0;
+                console.log(`Retirada: ${retirada.valor} -> ${valor}`);
+                return total + valor;
+            }, 0);
+
+            // Calcular valor inicial
+            const valorInicial = parseFloat(estadoApp.aberturaAtual?.valor_inicial) || 0;
+            console.log(`Valor inicial: ${valorInicial}`);
+
+            // Calcular saldo atual (APENAS DINHEIRO) - FÓRMULA CORRETA
+            const saldoAtual = valorInicial + vendasDinheiro - totalRetiradas;
+
+            console.log(`Cálculo: ${valorInicial} + ${vendasDinheiro} - ${totalRetiradas} = ${saldoAtual}`);
+
+            // Atualizar interface
+            elementos.valorInicial.textContent = formatarMoeda(valorInicial);
+            elementos.vendasDinheiro.textContent = formatarMoeda(vendasDinheiro);
+            elementos.vendasOutros.textContent = formatarMoeda(vendasOutros);
+            elementos.totalRetiradas.textContent = formatarMoeda(totalRetiradas);
+            elementos.saldoAtual.textContent = formatarMoeda(saldoAtual);
+
+            // Destacar saldo negativo
+            if (saldoAtual < 0) {
+                elementos.saldoAtual.classList.add('text-danger');
+                elementos.saldoAtual.classList.remove('text-success');
+            } else {
+                elementos.saldoAtual.classList.add('text-success');
+                elementos.saldoAtual.classList.remove('text-danger');
+            }
+        }*/
+
+
+        // Função prepararFechamentoCaixa - MODIFICADA
+        async function prepararFechamentoCaixa() {
+            try {
+                // Buscar dados atualizados
+                await carregarVendas();
+                await carregarRetiradas();
+
+                console.log('🔍 Preparando fechamento...');
+                console.log('Vendas:', estadoApp.vendas);
+                console.log('Retiradas:', estadoApp.retiradas);
+
+                const valorAbertura = parseFloat(estadoApp.aberturaAtual?.valor_inicial) || 0;
+
+                // Calcular vendas em dinheiro
+                const vendasDinheiro = estadoApp.vendas
+                    .filter(venda => venda.tipo_pagamento === 'DINHEIRO')
+                    .reduce((total, venda) => {
+                        const valor = parseFloat(venda.valor_total) || 0;
+                        return total + valor;
+                    }, 0);
+
+                // MODIFICAÇÃO AQUI: Calcular TODAS as formas de pagamento
+                const todasVendas = estadoApp.vendas
+                    .reduce((total, venda) => {
+                        const valor = parseFloat(venda.valor_total) || 0;
+                        return total + valor;
+                    }, 0);
+
+                const totalRetiradas = estadoApp.retiradas.reduce((total, retirada) => {
+                    const valor = parseFloat(retirada.valor) || 0;
+                    return total + valor;
+                }, 0);
+
+                // Calcular saldo final (APENAS DINHEIRO) - FÓRMULA CORRIGIDA
+                const saldoFinal = valorAbertura + vendasDinheiro - totalRetiradas;
+
+                console.log(`Fechamento - Cálculo: ${valorAbertura} + ${vendasDinheiro} - ${totalRetiradas} = ${saldoFinal}`);
+
+                // Atualizar resumo no modal - MODIFICAÇÃO AQUI
+                document.getElementById('resumoValorAbertura').textContent = formatarMoeda(valorAbertura);
+                document.getElementById('resumoVendasDinheiro').textContent = formatarMoeda(vendasDinheiro);
+                document.getElementById('resumoVendasOutros').textContent = formatarMoeda(todasVendas); // AGORA MOSTRA TOTAL
+                document.getElementById('resumoTotalRetiradas').textContent = formatarMoeda(totalRetiradas);
+                document.getElementById('resumoSaldoFinal').textContent = formatarMoeda(saldoFinal);
+
+                // ... o resto da função permanece igual
+                // Destacar saldo negativo
+                const resumoSaldoFinal = document.getElementById('resumoSaldoFinal');
+                if (saldoFinal < 0) {
+                    resumoSaldoFinal.classList.add('text-danger');
+                    resumoSaldoFinal.classList.remove('text-success');
+                } else {
+                    resumoSaldoFinal.classList.add('text-success');
+                    resumoSaldoFinal.classList.remove('text-danger');
+                }
+
+                // Atualizar resumo de vendas por tipo de pagamento
+                const resumoVendasPagamento = document.getElementById('resumoVendasPagamento');
+                resumoVendasPagamento.innerHTML = '';
+
+                estadoApp.tiposPagamento.forEach(tipo => {
+                    const vendasTipo = estadoApp.vendas.filter(venda => venda.tipo_pagamento === tipo);
+                    const totalTipo = vendasTipo.reduce((total, venda) => {
+                        const valor = parseFloat(venda.valor_total) || 0;
+                        return total + valor;
+                    }, 0);
+
+                    if (totalTipo > 0) {
+                        const item = document.createElement('div');
+                        item.className = 'd-flex justify-content-between';
+                        item.innerHTML = `
+                    <span>${formatarTipoPagamento(tipo)}:</span>
+                    <span>${formatarMoeda(totalTipo)}</span>
+                `;
+                        resumoVendasPagamento.appendChild(item);
+                    }
+                });
+
+                // Preparar dados para impressão - MODIFICAÇÃO AQUI
+                document.getElementById('impressaoData').textContent = new Date().toLocaleString('pt-BR');
+                document.getElementById('impressaoValorAbertura').textContent = formatarMoeda(valorAbertura);
+                document.getElementById('impressaoVendasDinheiro').textContent = formatarMoeda(vendasDinheiro);
+                document.getElementById('impressaoVendasOutros').textContent = formatarMoeda(todasVendas); // AGORA MOSTRA TOTAL
+                document.getElementById('impressaoTotalRetiradas').textContent = formatarMoeda(totalRetiradas);
+                document.getElementById('impressaoSaldoFinal').textContent = formatarMoeda(saldoFinal);
+
+                const impressaoVendasPagamento = document.getElementById('impressaoVendasPagamento');
+                impressaoVendasPagamento.innerHTML = '';
+
+                estadoApp.tiposPagamento.forEach(tipo => {
+                    const vendasTipo = estadoApp.vendas.filter(venda => venda.tipo_pagamento === tipo);
+                    const totalTipo = vendasTipo.reduce((total, venda) => {
+                        const valor = parseFloat(venda.valor_total) || 0;
+                        return total + valor;
+                    }, 0);
+
+                    if (totalTipo > 0) {
+                        const item = document.createElement('p');
+                        item.innerHTML = `<strong>${formatarTipoPagamento(tipo)}:</strong> ${formatarMoeda(totalTipo)}`;
+                        impressaoVendasPagamento.appendChild(item);
+                    }
+                });
+
+                const modal = new bootstrap.Modal(document.getElementById('modalFecharCaixa'));
+                modal.show();
+
+            } catch (error) {
+                console.error('Erro ao preparar fechamento:', error);
+                mostrarAlerta('Erro ao preparar fechamento: ' + error.message, 'danger');
+            }
+        }
+
+
+
+        /*/ Função prepararFechamentoCaixa - CORRIGIDA
+        async function prepararFechamentoCaixa() {
+            try {
+                // Buscar dados atualizados
+                await carregarVendas();
+                await carregarRetiradas();
+
+                console.log('🔍 Preparando fechamento...');
+                console.log('Vendas:', estadoApp.vendas);
+                console.log('Retiradas:', estadoApp.retiradas);
+
+                const valorAbertura = parseFloat(estadoApp.aberturaAtual?.valor_inicial) || 0;
+
+                // Calcular vendas em dinheiro
+                const vendasDinheiro = estadoApp.vendas
+                    .filter(venda => venda.tipo_pagamento === 'DINHEIRO')
+                    .reduce((total, venda) => {
+                        const valor = parseFloat(venda.valor_total) || 0;
+                        return total + valor;
+                    }, 0);
+
+                // Calcular outras formas de pagamento
+                const vendasOutros = estadoApp.vendas
+                    .filter(venda => venda.tipo_pagamento !== 'DINHEIRO')
+                    .reduce((total, venda) => {
+                        const valor = parseFloat(venda.valor_total) || 0;
+                        return total + valor;
+                    }, 0);
+
+                const totalRetiradas = estadoApp.retiradas.reduce((total, retirada) => {
+                    const valor = parseFloat(retirada.valor) || 0;
+                    return total + valor;
+                }, 0);
+
+                // Calcular saldo final (APENAS DINHEIRO) - FÓRMULA CORRIGIDA
+                const saldoFinal = valorAbertura + vendasDinheiro - totalRetiradas;
+
+                console.log(`Fechamento - Cálculo: ${valorAbertura} + ${vendasDinheiro} - ${totalRetiradas} = ${saldoFinal}`);
+
+                // Atualizar resumo no modal
+                document.getElementById('resumoValorAbertura').textContent = formatarMoeda(valorAbertura);
+                document.getElementById('resumoVendasDinheiro').textContent = formatarMoeda(vendasDinheiro);
+                document.getElementById('resumoVendasOutros').textContent = formatarMoeda(vendasOutros);
+                document.getElementById('resumoTotalRetiradas').textContent = formatarMoeda(totalRetiradas);
+                document.getElementById('resumoSaldoFinal').textContent = formatarMoeda(saldoFinal);
+
+                // Destacar saldo negativo
+                const resumoSaldoFinal = document.getElementById('resumoSaldoFinal');
+                if (saldoFinal < 0) {
+                    resumoSaldoFinal.classList.add('text-danger');
+                    resumoSaldoFinal.classList.remove('text-success');
+                } else {
+                    resumoSaldoFinal.classList.add('text-success');
+                    resumoSaldoFinal.classList.remove('text-danger');
+                }
+
+                // Atualizar resumo de vendas por tipo de pagamento
+                const resumoVendasPagamento = document.getElementById('resumoVendasPagamento');
+                resumoVendasPagamento.innerHTML = '';
+
+                estadoApp.tiposPagamento.forEach(tipo => {
+                    const vendasTipo = estadoApp.vendas.filter(venda => venda.tipo_pagamento === tipo);
+                    const totalTipo = vendasTipo.reduce((total, venda) => {
+                        const valor = parseFloat(venda.valor_total) || 0;
+                        return total + valor;
+                    }, 0);
+
+                    if (totalTipo > 0) {
+                        const item = document.createElement('div');
+                        item.className = 'd-flex justify-content-between';
+                        item.innerHTML = `
+                    <span>${formatarTipoPagamento(tipo)}:</span>
+                    <span>${formatarMoeda(totalTipo)}</span>
+                `;
+                        resumoVendasPagamento.appendChild(item);
+                    }
+                });
+
+                // Preparar dados para impressão
+                document.getElementById('impressaoData').textContent = new Date().toLocaleString('pt-BR');
+                document.getElementById('impressaoValorAbertura').textContent = formatarMoeda(valorAbertura);
+                document.getElementById('impressaoVendasDinheiro').textContent = formatarMoeda(vendasDinheiro);
+                document.getElementById('impressaoVendasOutros').textContent = formatarMoeda(vendasOutros);
+                document.getElementById('impressaoTotalRetiradas').textContent = formatarMoeda(totalRetiradas);
+                document.getElementById('impressaoSaldoFinal').textContent = formatarMoeda(saldoFinal);
+
+                const impressaoVendasPagamento = document.getElementById('impressaoVendasPagamento');
+                impressaoVendasPagamento.innerHTML = '';
+
+                estadoApp.tiposPagamento.forEach(tipo => {
+                    const vendasTipo = estadoApp.vendas.filter(venda => venda.tipo_pagamento === tipo);
+                    const totalTipo = vendasTipo.reduce((total, venda) => {
+                        const valor = parseFloat(venda.valor_total) || 0;
+                        return total + valor;
+                    }, 0);
+
+                    if (totalTipo > 0) {
+                        const item = document.createElement('p');
+                        item.innerHTML = `<strong>${formatarTipoPagamento(tipo)}:</strong> ${formatarMoeda(totalTipo)}`;
+                        impressaoVendasPagamento.appendChild(item);
+                    }
+                });
+
+                const modal = new bootstrap.Modal(document.getElementById('modalFecharCaixa'));
+                modal.show();
+
+            } catch (error) {
+                console.error('Erro ao preparar fechamento:', error);
+                mostrarAlerta('Erro ao preparar fechamento: ' + error.message, 'danger');
+            }
+        }*/
+
+        // Adicionar esta função para debug
+        function debugValores() {
+            console.log('=== DEBUG VALORES ===');
+            console.log('Abertura:', estadoApp.aberturaAtual);
+            console.log('Vendas:', estadoApp.vendas);
+            console.log('Retiradas:', estadoApp.retiradas);
+
+            const valorInicial = parseFloat(estadoApp.aberturaAtual?.valor_inicial) || 0;
+            const vendasDinheiro = estadoApp.vendas
+                .filter(v => v.tipo_pagamento === 'DINHEIRO')
+                .reduce((total, v) => total + (parseFloat(v.valor_total) || 0), 0);
+            const totalRetiradas = estadoApp.retiradas.reduce((total, r) => total + (parseFloat(r.valor) || 0), 0);
+            const saldo = valorInicial + vendasDinheiro - totalRetiradas;
+
+            console.log(`Cálculo: ${valorInicial} + ${vendasDinheiro} - ${totalRetiradas} = ${saldo}`);
+            console.log('=== FIM DEBUG ===');
+        }
+
+        // Chamar debug quando necessário (pode remover depois)
+        // debugValores();
+
+
+        // Fechar caixa
+        async function fecharCaixa() {
+            const valorRetiradaFechamento = parseFloat(document.getElementById('valorRetiradaFechamento').value) || 0;
+            const obsRetiradaFechamento = document.getElementById('obsRetiradaFechamento').value;
+
+            try {
+                elementos.btnConfirmarFechamento.classList.add('loading');
+
+                await apiRequest('/caixa/fechar', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        caixa_abertura_id: estadoApp.aberturaAtual.id,
+                        observacoes: obsRetiradaFechamento
+                    })
+                });
+
+                // Registrar retirada final se houver
+                if (valorRetiradaFechamento > 0) {
+                    await apiRequest('/retiradas', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            valor: valorRetiradaFechamento,
+                            observacao: 'Retirada final - ' + obsRetiradaFechamento,
+                            caixa_abertura_id: estadoApp.aberturaAtual.id
+                        })
+                    });
+                }
+
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalFecharCaixa'));
+                modal.hide();
+
+                estadoApp.caixaAberto = false;
+                estadoApp.aberturaAtual = null;
+                estadoApp.vendas = [];
+                estadoApp.retiradas = [];
+
+                atualizarInterfaceCaixaFechado();
+                mostrarAlerta('Caixa fechado com sucesso!', 'success');
+
+            } catch (error) {
+                mostrarAlerta('Erro ao fechar caixa: ' + error.message, 'danger');
+            } finally {
+                elementos.btnConfirmarFechamento.classList.remove('loading');
+            }
+        }
+
+        // Funções de interface
+        function atualizarInterfaceCaixaAberto() {
+            elementos.telaInicial.style.display = 'none';
+            elementos.dashboardCaixa.style.display = 'flex';
+            elementos.statusCaixa.innerHTML = '<i class="bi bi-circle-fill text-success"></i> Caixa Aberto';
+            elementos.statusCaixa.className = 'navbar-text status-caixa caixa-aberto';
+
+            atualizarResumoCaixa();
+        }
+
+        function atualizarInterfaceCaixaFechado() {
+            elementos.telaInicial.style.display = 'block';
+            elementos.dashboardCaixa.style.display = 'none';
+            elementos.statusCaixa.innerHTML = '<i class="bi bi-circle-fill text-danger"></i> Caixa Fechado';
+            elementos.statusCaixa.className = 'navbar-text status-caixa caixa-fechado';
+        }
+
+
+        function atualizarRelatorioVendas() {
+    if (!elementos.paymentColumns) return;
+
+    // Salvar qual input estava com foco antes da atualização
+    let inputComFoco = null;
+    let tipoComFoco = null;
+    
+    document.querySelectorAll('.manual-input').forEach(input => {
+        if (input === document.activeElement) {
+            tipoComFoco = input.getAttribute('data-tipo');
+        }
+    });
+
+    elementos.paymentColumns.innerHTML = '';
+
+    estadoApp.tiposPagamento.forEach(tipo => {
+        const vendasSistema = estadoApp.vendas.filter(venda => venda.tipo_pagamento === tipo);
+        const vendasManuais = estadoApp.vendasManuais[tipo] || [];
+        const totalSistema = vendasSistema.reduce((total, venda) => total + parseFloat(venda.valor_total || 0), 0);
+        const totalManual = vendasManuais.reduce((total, venda) => total + parseFloat(venda.valor || 0), 0);
+
+        const coluna = document.createElement('div');
+        coluna.className = 'col-md-6 col-lg-6 payment-column';
+        coluna.innerHTML = `
+            <div class="row">
+                <!-- Tipo Pagamento -->
+            <div class="total-combinado text-center mt-2 p-2 bg-warning text-dark rounded">
+                <strong>${formatarTipoPagamento(tipo)}</strong>
+            </div>
+                <!-- Coluna de Vendas do Sistema -->
+                <div class="col-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-primary text-white py-2">
+                            <h6 class="card-title mb-0 text-center">Sistema</h6>
+                        </div>
+                        <div class="card-body p-2">
+                            <div class="vendas-lista" style="max-height: 200px; overflow-y: auto;">
+                                ${vendasSistema.length > 0 ? vendasSistema.map(venda => `
+                                    <div class="sale-item sistema" data-id="${venda.id}">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>${formatarMoeda(venda.valor_total)}</span>
+                                            <small class="text-muted">${new Date(venda.data_venda).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</small>
+                                        </div>
+                                    </div>
+                                `).join('') : `
+                                    <div class="text-center text-muted py-3">
+                                        <small>Nenhuma venda</small>
+                                    </div>
+                                `}
+                            </div>
+                            <div class="payment-total text-center mt-2 p-2 bg-light rounded">
+                                <strong>Total: ${formatarMoeda(totalSistema)}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coluna de Vendas Manuais -->
+                <div class="col-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-success text-white py-2">
+                            <h6 class="card-title mb-0 text-center">Real</h6>
+                        </div>
+                        <div class="card-body p-2">
+                            <!-- Área de entrada rápida -->
+                            <div class="input-group input-group-sm mb-3">
+                                <span class="input-group-text">R$</span>
+                                <input type="number" 
+                                       class="form-control manual-input" 
+                                       id="inputManual-${tipo}" 
+                                       placeholder="0,00" 
+                                       step="0.01" 
+                                       min="0.01"
+                                       data-tipo="${tipo}"
+                                       autocomplete="off">
+                                <button class="btn btn-success btn-sm" type="button" onclick="adicionarVendaManual('${tipo}')">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Lista de vendas manuais -->
+                            <div class="vendas-lista" style="max-height: 150px; overflow-y: auto;">
+                                ${vendasManuais.length > 0 ? vendasManuais.map((venda, index) => `
+                                    <div class="sale-item manual" data-tipo="${tipo}" data-index="${index}">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>${formatarMoeda(venda.valor)}</span>
+                                            <div>
+                                                
+                                                <button class="btn btn-sm btn-outline-danger p-0" style="width: 18px; height: 18px; font-size: 10px; line-height: 1;" onclick="event.stopPropagation(); removerVendaManual('${tipo}', ${index})">
+                                                    ×
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('') : `
+                                    <div class="text-center text-muted py-2">
+                                        <small>Nenhuma venda manual</small>
+                                    </div>
+                                `}
+                            </div>
+                            <div class="payment-total text-center mt-2 p-2 bg-light rounded">
+                                <strong>Total: ${formatarMoeda(totalManual)}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Total Combinado -->
+            <div class="total-combinado text-center mt-2 p-2 bg-warning text-dark rounded">
+                <strong>DIFERENÇA: ${formatarMoeda(totalManual - totalSistema)}</strong>
+            </div>
+        `;
+
+        elementos.paymentColumns.appendChild(coluna);
+    });
+
+    // Adicionar event listeners para os inputs manuais
+    document.querySelectorAll('.manual-input').forEach(input => {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const tipo = this.getAttribute('data-tipo');
+                adicionarVendaManual(tipo);
+            }
+        });
+        
+        // Prevenir que o clique em qualquer lugar tire o foco do input
+        input.addEventListener('blur', function(e) {
+            // Pequeno delay para verificar se o foco foi para outro elemento útil
+            setTimeout(() => {
+                // Se o foco não foi para outro input ou botão, restaurar o foco
+                if (!document.activeElement.classList.contains('manual-input') && 
+                    !document.activeElement.classList.contains('btn')) {
+                    this.focus();
+                }
+            }, 10);
+        });
+    });
+
+    // Restaurar o foco no input que estava com foco antes da atualização
+    if (tipoComFoco) {
+        setTimeout(() => {
+            const input = document.getElementById(`inputManual-${tipoComFoco}`);
+            if (input) {
+                input.focus();
+                // Colocar o cursor no final do texto
+                input.setSelectionRange(input.value.length, input.value.length);
+            }
+        }, 100);
+    }
+
+    // Adicionar event listeners para os itens de venda do sistema
+    document.querySelectorAll('.sale-item.sistema').forEach(item => {
+        item.addEventListener('click', function() {
+            const vendaId = this.getAttribute('data-id');
+            abrirDetalhesVenda(vendaId);
+        });
+    });
+
+    // Atualizar totais gerais
+    atualizarTotaisGerais();
+}
+        /*function atualizarRelatorioVendas() {
+    if (!elementos.paymentColumns) return;
+
+    elementos.paymentColumns.innerHTML = '';
+
+    estadoApp.tiposPagamento.forEach(tipo => {
+        const vendasSistema = estadoApp.vendas.filter(venda => venda.tipo_pagamento === tipo);
+        const vendasManuais = estadoApp.vendasManuais[tipo] || [];
+        const totalSistema = vendasSistema.reduce((total, venda) => total + parseFloat(venda.valor_total || 0), 0);
+        const totalManual = vendasManuais.reduce((total, venda) => total + parseFloat(venda.valor || 0), 0);
+
+        const coluna = document.createElement('div');
+        coluna.className = 'col-md-6 col-lg-6 payment-column';
+        coluna.innerHTML = `
+            <div class="row">
+                <!-- Total Combinado -->
+            <div class="total-combinado text-center mt-2 p-2 bg-warning text-dark rounded">
+                <strong>${formatarTipoPagamento(tipo)}</strong>
+            </div>
+                <!-- Coluna de Vendas do Sistema (IGUAL À ORIGINAL) -->
+                <div class="col-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-primary text-white py-2">
+                            <h6 class="card-title mb-0 text-center">Sistema</h6>
+                        </div>
+                        <div class="card-body p-2">
+                            <div class="vendas-lista" style="max-height: 200px; overflow-y: auto;">
+                                ${vendasSistema.length > 0 ? vendasSistema.map(venda => `
+                                    <div class="sale-item sistema" data-id="${venda.id}">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>${formatarMoeda(venda.valor_total)}</span>
+                                            <small class="text-muted">${new Date(venda.data_venda).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</small>
+                                        </div>
+                                    </div>
+                                `).join('') : `
+                                    <div class="text-center text-muted py-3">
+                                        <small>Nenhuma venda</small>
+                                    </div>
+                                `}
+                            </div>
+                            <div class="payment-total text-center mt-2 p-2 bg-light rounded">
+                                <strong>Total: ${formatarMoeda(totalSistema)}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coluna de Vendas Manuais (MESMO LAYOUT DA SISTEMA) -->
+                <div class="col-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-success text-white py-2">
+                            <h6 class="card-title mb-0 text-center">Real</h6>
+                        </div>
+                        <div class="card-body p-2">
+                            <!-- Área de entrada rápida -->
+                            <div class="input-group input-group-sm mb-3">
+                                <span class="input-group-text">R$</span>
+                                <input type="number" 
+                                       class="form-control manual-input" 
+                                       id="inputManual-${tipo}" 
+                                       placeholder="0,00" 
+                                       step="0.01" 
+                                       min="0.01"
+                                       data-tipo="${tipo}">
+                                <button class="btn btn-success btn-sm" type="button" onclick="adicionarVendaManual('${tipo}')">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Lista de vendas manuais -->
+                            <div class="vendas-lista" style="max-height: 150px; overflow-y: auto;">
+                                ${vendasManuais.length > 0 ? vendasManuais.map((venda, index) => `
+                                    <div class="sale-item manual" data-tipo="${tipo}" data-index="${index}">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span>${formatarMoeda(venda.valor)}</span>
+                                            
+                                        </div>
+                                    </div>
+                                `).join('') : `
+                                    <div class="text-center text-muted py-2">
+                                        <small>Nenhuma venda manual</small>
+                                    </div>
+                                `}
+                            </div>
+                            <div class="payment-total text-center mt-2 p-2 bg-light rounded">
+                                <strong>Total: ${formatarMoeda(totalManual)}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Total Combinado -->
+            <div class="total-combinado text-center mt-2 p-2 bg-warning text-dark rounded">
+                <strong>DIFERENÇA: ${formatarMoeda(totalManual - totalSistema)}</strong>
+            </div>
+        `;
+
+        elementos.paymentColumns.appendChild(coluna);
+
+        
+    });
+
+    // Adicionar event listeners para os inputs manuais
+    document.querySelectorAll('.manual-input').forEach(input => {
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const tipo = this.getAttribute('data-tipo');
+                adicionarVendaManual(tipo);
+            }
+        });
+    });
+
+    // Prevenir que o clique em qualquer lugar tire o foco do input
+        input.addEventListener('blur', function(e) {
+            // Pequeno delay para verificar se o foco foi para outro elemento útil
+            setTimeout(() => {
+                // Se o foco não foi para outro input ou botão, restaurar o foco
+                if (!document.activeElement.classList.contains('manual-input') && 
+                    !document.activeElement.classList.contains('btn')) {
+                    this.focus();
+                }
+            }, 10);
+        });
+    
+
+    // Restaurar o foco no input que estava com foco antes da atualização
+    if (tipoComFoco) {
+        setTimeout(() => {
+            const input = document.getElementById(`inputManual-${tipoComFoco}`);
+            if (input) {
+                input.focus();
+                // Colocar o cursor no final do texto
+                input.setSelectionRange(input.value.length, input.value.length);
+            }
+        }, 100);
+    }
+
+    // Adicionar event listeners para os itens de venda do sistema
+    document.querySelectorAll('.sale-item.sistema').forEach(item => {
+        item.addEventListener('click', function() {
+            const vendaId = this.getAttribute('data-id');
+            abrirDetalhesVenda(vendaId);
+        });
+    });
+
+    // Atualizar totais gerais
+    atualizarTotaisGerais();
+}*/
+        /*function atualizarRelatorioVendas() {
+            if (!elementos.paymentColumns) return;
+
+            elementos.paymentColumns.innerHTML = '';
+
+            estadoApp.tiposPagamento.forEach(tipo => {
+                const vendasSistema = estadoApp.vendas.filter(venda => venda.tipo_pagamento === tipo);
+                const vendasManuais = estadoApp.vendasManuais[tipo] || [];
+                const totalSistema = vendasSistema.reduce((total, venda) => total + parseFloat(venda.valor_total || 0), 0);
+                const totalManual = vendasManuais.reduce((total, venda) => total + parseFloat(venda.valor || 0), 0);
+                const totalTipo = totalSistema + totalManual;
+
+                const coluna = document.createElement('div');
+                coluna.className = 'col-md-6 col-lg-4 payment-column';
+                coluna.innerHTML = `
+            <div class="row">
+                <!-- Coluna de Vendas do Sistema -->
+                <div class="col-6">
+                    <h6 class="text-center">${formatarTipoPagamento(tipo)}</h6>
+                    <div class="vendas-lista" style="max-height: 200px; overflow-y: auto;">
+                        <div class="sistema-vendas">
+                            ${vendasSistema.map(venda => `
+                                <div class="sale-item sistema" data-id="${venda.id}">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span>${formatarMoeda(venda.valor_total)}</span>
+                                        <small class="text-muted">S</small>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="manual-vendas">
+                            ${vendasManuais.map((venda, index) => `
+                                <div class="sale-item manual" data-tipo="${tipo}" data-index="${index}">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span>${formatarMoeda(venda.valor)}</span>
+                                        <div>
+                                            <small class="text-muted">M</small>
+                                            <button class="btn btn-sm btn-outline-danger p-0 ms-1" style="width: 16px; height: 16px; font-size: 10px;" onclick="removerVendaManual('${tipo}', ${index})">
+                                                ×
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="payment-total text-center">
+                        Sistema: ${formatarMoeda(totalSistema)}
+                    </div>
+                </div>
+
+                <!-- Coluna de Entrada Manual -->
+                <div class="col-6">
+                    <h6 class="text-center text-muted">Entrada Manual</h6>
+                    <div class="manual-input-section">
+                        <div class="input-group input-group-sm mb-2">
+                            <span class="input-group-text">R$</span>
+                            <input type="number" 
+                                   class="form-control manual-input" 
+                                   id="inputManual-${tipo}" 
+                                   placeholder="0,00" 
+                                   step="0.01" 
+                                   min="0.01"
+                                   data-tipo="${tipo}">
+                            <button class="btn btn-success btn-sm" type="button" onclick="adicionarVendaManual('${tipo}')">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </div>
+                        <div class="manual-total text-center">
+                            Manual: ${formatarMoeda(totalManual)}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Total da Coluna -->
+            <div class="total-coluna text-center mt-2 p-2 bg-light rounded">
+                <strong>Total ${formatarTipoPagamento(tipo)}: ${formatarMoeda(totalTipo)}</strong>
+            </div>
+                `;
+
+                elementos.paymentColumns.appendChild(coluna);
+            });
+
+            // Adicionar event listeners para os inputs manuais
+            document.querySelectorAll('.manual-input').forEach(input => {
+                input.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        const tipo = this.getAttribute('data-tipo');
+                        adicionarVendaManual(tipo);
+                    }
+                });
+            });
+
+            // Adicionar event listeners para os itens de venda do sistema
+            document.querySelectorAll('.sale-item.sistema').forEach(item => {
+                item.addEventListener('click', function () {
+                    const vendaId = this.getAttribute('data-id');
+                    abrirDetalhesVenda(vendaId);
+                });
+            });
+
+            // Atualizar totais gerais
+            atualizarTotaisGerais();
+        }*/
+
+        // Função para adicionar venda manual
+        function adicionarVendaManual(tipo) {
+            const input = document.getElementById(`inputManual-${tipo}`);
+            const valor = parseFloat(input.value);
+
+            if (isNaN(valor) || valor <= 0) {
+                mostrarAlerta('Por favor, insira um valor válido', 'warning');
+                input.focus();
+                return;
+            }
+
+            // Adicionar venda manual
+            if (!estadoApp.vendasManuais[tipo]) {
+                estadoApp.vendasManuais[tipo] = [];
+            }
+
+            estadoApp.vendasManuais[tipo].push({
+                valor: valor,
+                data: new Date().toISOString(),
+                descricao: `Venda manual - ${formatarTipoPagamento(tipo)}`
+            });
+
+            // Limpar input
+            input.value = '';
+            input.focus(); // MANTER O FOCO NO INPUT
+
+            // Atualizar interface
+            atualizarRelatorioVendas();
+            atualizarResumoCaixaComManuais();
+
+            mostrarAlerta(`Venda manual de ${formatarMoeda(valor)} adicionada em ${formatarTipoPagamento(tipo)}`, 'success');
+        }
+
+        // Função para remover venda manual
+        function removerVendaManual(tipo, index) {
+            if (estadoApp.vendasManuais[tipo] && estadoApp.vendasManuais[tipo][index]) {
+                const valorRemovido = estadoApp.vendasManuais[tipo][index].valor;
+                estadoApp.vendasManuais[tipo].splice(index, 1);
+
+                atualizarRelatorioVendas();
+                atualizarResumoCaixaComManuais();
+
+                mostrarAlerta(`Venda manual de ${formatarMoeda(valorRemovido)} removida`, 'info');
+            }
+        }
+
+
+        // Função para atualizar totais gerais
+function atualizarTotaisGerais() {
+    let totalSistema = 0;
+    let totalManuais = 0;
+
+    estadoApp.tiposPagamento.forEach(tipo => {
+        const vendasSistema = estadoApp.vendas.filter(venda => venda.tipo_pagamento === tipo);
+        const vendasManuais = estadoApp.vendasManuais[tipo] || [];
+        
+        totalSistema += vendasSistema.reduce((total, venda) => total + parseFloat(venda.valor_total || 0), 0);
+        totalManuais += vendasManuais.reduce((total, venda) => total + parseFloat(venda.valor || 0), 0);
+    });
+
+    const totalGeral = totalManuais - totalSistema;
+
+    // Atualizar elementos na interface
+    if (document.getElementById('totalVendasSistema')) {
+        document.getElementById('totalVendasSistema').textContent = formatarMoeda(totalSistema);
+    }
+    if (document.getElementById('totalVendasManuais')) {
+        document.getElementById('totalVendasManuais').textContent = formatarMoeda(totalManuais);
+    }
+    if (document.getElementById('totalGeralVendas')) {
+        document.getElementById('totalGeralVendas').textContent = formatarMoeda(totalGeral);
+    }
+
+    // Adicionar badges coloridos para melhor visualização
+    const resumoElement = document.querySelector('.card.bg-light .card-body');
+    if (resumoElement) {
+        resumoElement.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="mb-3">Resumo de Vendas</h6>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>Vendas do Sistema:</span>
+                        <span class="badge bg-primary fs-6">${formatarMoeda(totalSistema)}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>Vendas Manuais:</span>
+                        <span class="badge bg-success fs-6">${formatarMoeda(totalManuais)}</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                        <span class="fs-5 fw-bold">Diferença Geral:</span>
+                        <span class="fs-4 text-success fw-bold">${formatarMoeda(totalGeral)}</span>
+                    </div>
+                    
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Função para limpar todas as vendas manuais
+function limparTodasVendasManuais() {
+    if (confirm('Tem certeza que deseja limpar TODAS as vendas manuais? Esta ação não pode ser desfeita.')) {
+        estadoApp.tiposPagamento.forEach(tipo => {
+            estadoApp.vendasManuais[tipo] = [];
+        });
+        
+        atualizarRelatorioVendas();
+        atualizarResumoCaixaComManuais();
+        
+        mostrarAlerta('Todas as vendas manuais foram removidas', 'info');
+    }
+}
+        /*/ Função para atualizar totais gerais
+        function atualizarTotaisGerais() {
+            let totalSistema = 0;
+            let totalManuais = 0;
+
+            estadoApp.tiposPagamento.forEach(tipo => {
+                const vendasSistema = estadoApp.vendas.filter(venda => venda.tipo_pagamento === tipo);
+                const vendasManuais = estadoApp.vendasManuais[tipo] || [];
+
+                totalSistema += vendasSistema.reduce((total, venda) => total + parseFloat(venda.valor_total || 0), 0);
+                totalManuais += vendasManuais.reduce((total, venda) => total + parseFloat(venda.valor || 0), 0);
+            });
+
+            const totalGeral = totalSistema + totalManuais;
+
+            // Atualizar elementos na interface
+            if (document.getElementById('totalVendasSistema')) {
+                document.getElementById('totalVendasSistema').textContent = formatarMoeda(totalSistema);
+            }
+            if (document.getElementById('totalVendasManuais')) {
+                document.getElementById('totalVendasManuais').textContent = formatarMoeda(totalManuais);
+            }
+            if (document.getElementById('totalGeralVendas')) {
+                document.getElementById('totalGeralVendas').textContent = formatarMoeda(totalGeral);
+            }
+        }*/
+
+        // Função para atualizar o resumo do caixa incluindo vendas manuais
+        function atualizarResumoCaixaComManuais() {
+            console.log('🔄 Atualizando resumo do caixa com vendas manuais...');
+
+            // Calcular vendas em dinheiro (sistema + manuais)
+            const vendasDinheiroSistema = estadoApp.vendas
+                .filter(venda => venda.tipo_pagamento === 'DINHEIRO')
+                .reduce((total, venda) => total + (parseFloat(venda.valor_total) || 0), 0);
+
+            const vendasDinheiroManuais = (estadoApp.vendasManuais['DINHEIRO'] || [])
+                .reduce((total, venda) => total + (parseFloat(venda.valor) || 0), 0);
+
+            const vendasDinheiroTotal = vendasDinheiroSistema;
+
+            // Calcular TODAS as vendas (sistema + manuais)
+            let todasVendasSistema = 0;
+            let todasVendasManuais = 0;
+
+            estadoApp.tiposPagamento.forEach(tipo => {
+                const vendasSistema = estadoApp.vendas.filter(venda => venda.tipo_pagamento === tipo);
+                const vendasManuais = estadoApp.vendasManuais[tipo] || [];
+
+                todasVendasSistema += vendasSistema.reduce((total, venda) => total + (parseFloat(venda.valor_total) || 0), 0);
+                todasVendasManuais += vendasManuais.reduce((total, venda) => total + (parseFloat(venda.valor) || 0), 0);
+            });
+
+            const todasVendasTotal = todasVendasSistema;
+
+            // Calcular total de retiradas
+            const totalRetiradas = estadoApp.retiradas.reduce((total, retirada) => {
+                const valor = parseFloat(retirada.valor) || 0;
+                return total + valor;
+            }, 0);
+
+            // Calcular valor inicial
+            const valorInicial = parseFloat(estadoApp.aberturaAtual?.valor_inicial) || 0;
+
+            // Calcular saldo atual (APENAS DINHEIRO - sistema + manual)
+            const saldoAtual = valorInicial + vendasDinheiroTotal - totalRetiradas;
+
+            console.log(`Cálculo com manuais: ${valorInicial} + ${vendasDinheiroTotal} - ${totalRetiradas} = ${saldoAtual}`);
+
+            // Atualizar interface
+            elementos.valorInicial.textContent = formatarMoeda(valorInicial);
+            elementos.vendasDinheiro.textContent = formatarMoeda(vendasDinheiroTotal);
+            elementos.vendasOutros.textContent = formatarMoeda(todasVendasTotal);
+            elementos.totalRetiradas.textContent = formatarMoeda(totalRetiradas);
+            elementos.saldoAtual.textContent = formatarMoeda(saldoAtual);
+
+            // Destacar saldo negativo
+            if (saldoAtual < 0) {
+                elementos.saldoAtual.classList.add('text-danger');
+                elementos.saldoAtual.classList.remove('text-success');
+            } else {
+                elementos.saldoAtual.classList.add('text-success');
+                elementos.saldoAtual.classList.remove('text-danger');
+            }
+        }
+        /*function atualizarRelatorioVendas() {
+            if (!elementos.paymentColumns) return;
+
+            elementos.paymentColumns.innerHTML = '';
+
+            estadoApp.tiposPagamento.forEach(tipo => {
+                const vendasTipo = estadoApp.vendas.filter(venda => venda.tipo_pagamento === tipo);
+                const totalTipo = vendasTipo.reduce((total, venda) => total + parseFloat(venda.valor_total), 0);
+
+                const coluna = document.createElement('div');
+                coluna.className = 'col-md payment-column';
+                coluna.innerHTML = `
+                    <h6 class="text-center">${formatarTipoPagamento(tipo)}</h6>
+                    <div id="vendas-${tipo}">
+                        ${vendasTipo.map(venda => `
+                            <div class="sale-item" data-id="${venda.id}">
+                                ${formatarMoeda(venda.valor_total)}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="payment-total text-center">
+                        Total: ${formatarMoeda(totalTipo)}
+                    </div>
+                `;
+
+                elementos.paymentColumns.appendChild(coluna);
+            });
+
+            // Adicionar event listeners para os itens de venda
+            document.querySelectorAll('.sale-item').forEach(item => {
+                item.addEventListener('click', function () {
+                    const vendaId = this.getAttribute('data-id');
+                    abrirDetalhesVenda(vendaId);
+                });
+            });
+        }*/
+
+        function imprimirComprovante() {
+            window.print();
+        }
+
+        // Funções auxiliares
+
+        // Função formatarMoeda melhorada
+        function formatarMoeda(valor) {
+            // Garantir que é um número
+            const numero = typeof valor === 'string' ? parseFloat(valor) : Number(valor);
+
+            if (isNaN(numero)) {
+                console.warn('Valor inválido para formatação:', valor);
+                return new Intl.NumberFormat('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                }).format(0);
+            }
+
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(numero);
+        }
+
+        function formatarData(data) {
+            return new Date(data).toLocaleString('pt-BR');
+        }
+
+        function formatarTipoPagamento(tipo) {
+            const tipos = {
+                'DINHEIRO': 'Dinheiro',
+                'CARTAO_CREDITO': 'Cartão de Crédito',
+                'CARTAO_DEBITO': 'Cartão de Débito',
+                'PIX': 'PIX',
+                'OUTRO': 'Outro'
+            };
+            return tipos[tipo] || tipo;
+        }
+
+        function mostrarAlerta(mensagem, tipo) {
+            const alerta = document.createElement('div');
+            alerta.className = `alert alert-${tipo} alert-dismissible fade show`;
+            alerta.style.position = 'fixed';
+            alerta.style.top = '20px';
+            alerta.style.right = '20px';
+            alerta.style.zIndex = '9999';
+            alerta.style.minWidth = '300px';
+            alerta.innerHTML = `
+                ${mensagem}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.body.appendChild(alerta);
+
+            setTimeout(() => {
+                if (alerta.parentNode) {
+                    alerta.parentNode.removeChild(alerta);
+                }
+            }, 5000);
+        }
+
+        // Configurar atualização automática
+        setInterval(() => {
+            if (estadoApp.caixaAberto) {
+                carregarVendas();
+                carregarRetiradas();
+            }
+        }, 30000); // Atualizar a cada 30 segundos
+
+        // Função para gerar conteúdo de impressão térmica
+        function gerarConteudoImpressaoTermica(tipo = 'fechamento') {
+            const valorAbertura = parseFloat(estadoApp.aberturaAtual?.valor_inicial) || 0;
+            const vendasDinheiro = estadoApp.vendas
+                .filter(venda => venda.tipo_pagamento === 'DINHEIRO')
+                .reduce((total, venda) => total + (parseFloat(venda.valor_total) || 0), 0);
+
+            const todasVendas = estadoApp.vendas
+                .reduce((total, venda) => total + (parseFloat(venda.valor_total) || 0), 0);
+
+            const totalRetiradas = estadoApp.retiradas.reduce((total, retirada) =>
+                total + (parseFloat(retirada.valor) || 0), 0);
+
+            const saldoFinal = valorAbertura + vendasDinheiro - totalRetiradas;
+
+            // Calcular totais por tipo de pagamento
+            const totaisPorTipo = {};
+            estadoApp.tiposPagamento.forEach(tipo => {
+                totaisPorTipo[tipo] = estadoApp.vendas
+                    .filter(venda => venda.tipo_pagamento === tipo)
+                    .reduce((total, venda) => total + (parseFloat(venda.valor_total) || 0), 0);
+            });
+
+            const dataAtual = new Date().toLocaleString('pt-BR');
+            const numeroCaixa = estadoApp.aberturaAtual?.id || 'N/A';
+
+            let conteudo = `
+        <div class="impressao-termica">
+            <br>
+            <div class="text-center">
+                <div>RESTAURANTE EMPORIO DO SABOR</div>
+            </div>
+            <br>
+            <div class="text-center">
+                <div class="fw-bold">${tipo === 'fechamento' ? 'FECHAMENTO DE CAIXA' : 'COMPROVANTE DE CAIXA'}</div>
+                <div>${tipo === 'fechamento' ? 'RELATÓRIO FINAL' : 'RELATÓRIO PARCIAL'}</div>
+            </div>
+            
+            <div class="linha-divisoria"></div>
+            
+            <div class="text-center">
+                <div>Data: ${dataAtual}</div>
+                <br>
+            </div>
+            
+            <div class="linha-divisoria"></div>
+            
+            <table>
+                <tr>
+                    <td class="text-left">Valor de Abertura:</td>
+                    <td class="text-right">${formatarMoeda(valorAbertura)}</td>
+                </tr>
+                <tr>
+                    <td class="text-left">Vendas em Dinheiro:</td>
+                    <td class="text-right">${formatarMoeda(vendasDinheiro)}</td>
+                </tr>
+                <tr>
+                    <td class="text-left">Total de Vendas:</td>
+                    <td class="text-right">${formatarMoeda(todasVendas)}</td>
+                </tr>
+                <tr>
+                    <td class="text-left">Total de Retiradas:</td>
+                    <td class="text-right">${formatarMoeda(totalRetiradas)}</td>
+                </tr>
+            </table>
+            
+            <div class="linha-dupla"></div>
+            <br>
+            <table>
+                <tr>
+                    <td class="text-left fw-bold">SALDO FINAL:</td>
+                    <td class="text-right fw-bold">${formatarMoeda(saldoFinal)}</td>
+                </tr>
+            </table>
+            
+            <div class="linha-divisoria"></div>
+            <br>
+            <div class="fw-bold text-center">VENDAS POR FORMA PAGTO</div>
+            <br>
+            <table>
+    `;
+
+            // Adicionar totais por tipo de pagamento
+            estadoApp.tiposPagamento.forEach(tipo => {
+                if (totaisPorTipo[tipo] > 0) {
+                    conteudo += `
+                <tr>
+                    <td class="text-left">${formatarTipoPagamento(tipo)}:</td>
+                    <td class="text-right">${formatarMoeda(totaisPorTipo[tipo])}</td>
+                </tr>
+            `;
+                }
+            });
+
+            conteudo += `
+            </table>
+            
+            <div class="linha-divisoria"></div>
+            <br>
+            <div class="fw-bold text-center">DETALHES DAS RETIRADAS</div>
+            <br>
+    `;
+
+            // Adicionar detalhes das retiradas
+            if (estadoApp.retiradas.length > 0) {
+                estadoApp.retiradas.forEach((retirada, index) => {
+                    const dataRetirada = new Date(retirada.data_retirada || retirada.created_at).toLocaleTimeString('pt-BR');
+                    const valor = parseFloat(retirada.valor) || 0;
+                    const obs = retirada.observacao || 'Sem observação';
+
+                    conteudo += `
+                <table>
+                    <tr>
+                        
+                        <td class="text-right">${formatarMoeda(valor)}</td> <td colspan="2" class="text-left"><small>${obs.substring(0, 35)}${obs.length > 35 ? '...' : ''}</small></td>
+                    </tr>
+                    
+                </table>
+            `;
+                });
+            } else {
+                conteudo += `
+            <div class="text-center">Nenhuma retirada</div>
+        `;
+            }
+
+            conteudo += `
+            <div class="linha-dupla"></div>
+            <br>
+            <div class="text-center">
+                <div>*** ${tipo === 'fechamento' ? 'CAIXA FECHADO' : 'CAIXA ABERTO'} ***</div>
+                <div>Restaurante Emporio do Sabor</div>
+            </div>
+            
+            <div style="margin-top: 20px;"></div>
+            <div class="text-center">--- CORTE AQUI ---</div>
+            <div style="margin-top: 10px;"></div>
+        </div>
+    `;
+
+            return conteudo;
+        }
+
+        // Função para pré-visualizar impressão térmica
+        function previsualizarImpressaoTermica(tipo = 'fechamento') {
+            const conteudo = gerarConteudoImpressaoTermica(tipo);
+            elementos.previewImpressaoTermica.innerHTML = conteudo;
+
+            const modal = new bootstrap.Modal(document.getElementById('modalPreviewImpressao'));
+            modal.show();
+        }
+
+        // Função para imprimir na impressora térmica
+        function imprimirTermica() {
+            const conteudoOriginal = elementos.previewImpressaoTermica.innerHTML;
+
+            // Criar um iframe para impressão
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+
+            const doc = iframe.contentWindow.document;
+
+            doc.open();
+            doc.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Impressão Térmica</title>
+            <style>
+                body {
+                    font-family: 'Courier New', monospace;
+                    font-size: 12px;
+                    line-height: 1;
+                    margin: 0;
+                    padding: 5px;
+                    width: 80mm;
+                    background: white;
+                    color: black;
+                }
+                .text-center { text-align: center; }
+                .text-left { text-align: left; }
+                .text-right { text-align: right; }
+                .fw-bold { font-weight: bold; }
+                .linha-divisoria { border-top: 1px dashed black; margin: 3px 0; }
+                .linha-dupla { border-top: 2px solid black; margin: 4px 0; }
+                table { width: 100%; border-collapse: collapse; }
+                th, td { padding: 2px 1px; border: none; }
+            </style>
+        </head>
+        <body>
+            ${conteudoOriginal}
+        </body>
+        </html>
+    `);
+            doc.close();
+
+            // Aguardar o conteúdo carregar e imprimir
+            setTimeout(() => {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+
+                // Remover o iframe após impressão
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                }, 1000);
+
+            }, 500);
+        }
+
+        // Função para impressão rápida (sem pré-visualização)
+        function imprimirTermicaRapida(tipo = 'fechamento') {
+            const conteudo = gerarConteudoImpressaoTermica(tipo);
+
+            const janelaImpressao = window.open('', '_blank');
+            janelaImpressao.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Impressão Térmica</title>
+            <style>
+                body {
+                    font-family: 'Courier New', monospace;
+                    font-size: 12px;
+                    line-height: 1;
+                    margin: 0;
+                    padding: 5px;
+                    width: 80mm;
+                    background: white;
+                    color: black;
+                }
+                .text-center { text-align: center; }
+                .text-left { text-align: left; }
+                .text-right { text-align: right; }
+                .fw-bold { font-weight: bold; }
+                .linha-divisoria { border-top: 1px dashed black; margin: 3px 0; }
+                .linha-dupla { border-top: 2px solid black; margin: 4px 0; }
+                table { width: 100%; border-collapse: collapse; }
+                th, td { padding: 2px 1px; border: none; }
+                @media print {
+                    body { margin: 0; padding: 5px; }
+                }
+            </style>
+        </head>
+        <body>
+            ${conteudo}
+        </body>
+        </html>
+    `);
+
+            janelaImpressao.document.close();
+
+            setTimeout(() => {
+                janelaImpressao.print();
+                setTimeout(() => janelaImpressao.close(), 500);
+            }, 500);
+        }
+
+    </script>
+</body>
+
+</html>
